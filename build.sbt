@@ -12,3 +12,7 @@ scalacOptions ++= Seq(
 )
 
 libraryDependencies += "org.http4s" %% "http4s-core" % "0.15.3a"
+libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.15.3a"
+
+libraryDependencies += "org.http4s" %% "http4s-blaze-server" % "0.15.3a" % "test"
+
