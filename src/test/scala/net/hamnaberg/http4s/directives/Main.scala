@@ -19,7 +19,7 @@ object Main extends ServerApp {
     import ops._
     import conditionalGET._
 
-    val Mapping = AsyncTask.Mapping[String](_.uri.path)
+    val Mapping = AsyncTask().Mapping[String](_.uri.path)
 
     val lm = Instant.now()
 
