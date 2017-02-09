@@ -12,7 +12,7 @@ object AsyncTask {
 case class AsyncTask(onFail: PartialFunction[Throwable, Task[Response]]) {
   type Intent = PartialFunction[Request, Task[Response]]
 
-  def task(pf: PartialFunction[Request, Directive[Task, Response, Response]]): Intent = {
+  def task(pf: PartialFunction[Request, Directive[Response, Response]]): Intent = {
     case req if pf.isDefinedAt(req) => pf(req).run(req).map(Result.merge).handleWith{
       case t if onFail.isDefinedAt(t) => onFail(t)
       case t => Task.now(Response(Status.InternalServerError))
@@ -20,7 +20,7 @@ case class AsyncTask(onFail: PartialFunction[Throwable, Task[Response]]) {
   }
 
   case class Mapping[X](from: Request => X) {
-    def apply(intent: PartialFunction[X, Directive[Task, Response, Response]]): Intent = task {
+    def apply(intent: PartialFunction[X, Directive[Response, Response]]): Intent = task {
       case req if intent.isDefinedAt(from(req)) => intent(from(req))
     }
   }

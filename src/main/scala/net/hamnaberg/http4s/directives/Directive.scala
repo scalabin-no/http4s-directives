@@ -2,62 +2,62 @@ package net.hamnaberg.http4s.directives
 
 import org.http4s.Request
 
-import scalaz._
-import syntax.monad._
-import scala.language.higherKinds
+import scala.language.reflectiveCalls
 
-case class Directive[F[+_], +L, +R](run: Request => F[Result[L, R]]){
-  def flatMap[LL >: L, B](f: R => Directive[F, LL, B])(implicit F:Monad[F]) =
-    Directive[F, LL, B](req => run(req).flatMap{
+import scalaz._
+import scalaz.concurrent.Task
+
+case class Directive[+L, +R](run: Request => Task[Result[L, R]]){
+  def flatMap[LL >: L, B](f: R => Directive[LL, B]) =
+    Directive[LL, B](req => run(req).flatMap{
       case Result.Success(value) => f(value).run(req)
-      case Result.Failure(value) => F.point(Result.Failure(value))
-      case Result.Error(value)   => F.point(Result.Error(value))
+      case Result.Failure(value) => Task.delay(Result.Failure(value))
+      case Result.Error(value)   => Task.delay(Result.Error(value))
     })
 
-  def map[B](f: R => B)(implicit F: Functor[F]) = Directive[F, L, B](req => run(req).map(_.map(f)))
+  def map[B](f: R => B) = Directive[L, B](req => run(req).map(_.map(f)))
 
-  def filter[LL >: L](f: R => Directive.Filter[LL])(implicit F: Monad[F]): Directive[F, LL, R] =
+  def filter[LL >: L](f: R => Directive.Filter[LL]): Directive[LL, R] =
     flatMap{ r =>
       val result = f(r)
       if(result.result)
-        Directive.success[F, R](r)
+        Directive.success[R](r)
       else
-        Directive.failure[F, LL](result.failure())
+        Directive.failure[LL](result.failure())
     }
 
-  def withFilter[LL >: L](f: R => Directive.Filter[LL])(implicit F: Monad[F]) =
-    filter(f)
+  def withFilter[LL >: L](f: R => Directive.Filter[LL]) = filter(f)
 
-  def orElse[LL >: L, RR >: R](next: Directive[F, LL, RR])(implicit F: Monad[F]) =
-    Directive[F, LL, RR](req => run(req).flatMap{
-      case Result.Success(value) => F.point(Result.Success(value))
+  def orElse[LL >: L, RR >: R](next: Directive[LL, RR]) =
+    Directive[LL, RR](req => run(req).flatMap{
+      case Result.Success(value) => Task.delay(Result.Success(value))
       case Result.Failure(_)     => next.run(req)
-      case Result.Error(value)   => F.point(Result.Error(value))
+      case Result.Error(value)   => Task.delay(Result.Error(value))
     })
 
-  def | [LL >: L, RR >: R](next: Directive[F, LL, RR])(implicit F: Monad[F]) = orElse(next)
+  def | [LL >: L, RR >: R](next: Directive[LL, RR]) = orElse(next)
 }
 
 object Directive {
 
-  implicit def monad[F[+_] : Monad, L] = new Monad[({type X[A] = Directive[F, L, A]})#X]{
-    def bind[A, B](fa: Directive[F, L, A])(f: (A) => Directive[F, L, B]) = fa flatMap f
-    def point[A](a: => A) = Directive[F, L, A](_ => Monad[F].point(Result.Success(a)))
+  implicit def monad[L] = new Monad[({type X[A] = Directive[L, A]})#X]{
+    def bind[A, B](fa: Directive[L, A])(f: (A) => Directive[L, B]) = fa flatMap f
+    def point[A](a: => A) = Directive[L, A](_ => Task.delay(Result.Success(a)))
   }
 
-  def point[F[+_] : Monad, A](a: => A) = monad[F, Nothing].point(a)
+  def point[A](a: => A) = monad[Nothing].point(a)
 
-  def result[F[+_] : Monad, L, R](result: => Result[L, R]) = Directive[F, L, R](_ => Monad[F].point(result))
+  def result[L, R](result: => Result[L, R]) = Directive[L, R](_ => Task.delay(result))
 
-  def success[F[+_] : Monad, R](success: => R) = result[F, Nothing, R](Result.Success(success))
-  def failure[F[+_] : Monad, L](failure: => L) = result[F, L, Nothing](Result.Failure(failure))
-  def error[F[+_] : Monad, L](error: => L) = result[F, L, Nothing](Result.Error(error))
+  def success[R](success: => R) = result[Nothing, R](Result.Success(success))
+  def failure[L](failure: => L) = result[L, Nothing](Result.Failure(failure))
+  def error[L](error: => L) = result[L, Nothing](Result.Error(error))
 
   object commit {
-    def flatMap[F[+_]:Monad, R, A](f:Unit => Directive[F, R, A]): Directive[F, R, A] =
+    def flatMap[R, A](f:Unit => Directive[R, A]): Directive[R, A] =
       commit(f(()))
 
-    def apply[F[+_]:Monad, R, A](d: Directive[F, R, A]) = Directive[F, R, A]{ r => d.run(r).map{
+    def apply[R, A](d: Directive[R, A]) = Directive[R, A]{ r => d.run(r).map{
       case Result.Failure(response) => Result.Error[R](response)
       case result                   => result
     }}

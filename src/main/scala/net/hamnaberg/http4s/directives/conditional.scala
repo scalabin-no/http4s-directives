@@ -14,7 +14,7 @@ object conditional {
     import java.time.Instant
 
 
-    def ifModifiedSince(lm: Instant, orElse: => Task[Response]): Directive[Task, Response, Response] = {
+    def ifModifiedSince(lm: Instant, orElse: => Task[Response]): Directive[Response, Response] = {
       val date = lm.`with`(ChronoField.MILLI_OF_SECOND, 0L)
       for {
         mod <- `If-Modified-Since`
@@ -30,7 +30,7 @@ object conditional {
       } yield res
     }*/
 
-    def ifNoneMatch(tag: ETag.EntityTag, orElse: => Task[Response]): Directive[Task, Response, Response] = {
+    def ifNoneMatch(tag: ETag.EntityTag, orElse: => Task[Response]): Directive[Response, Response] = {
       for {
         mod <- `If-None-Match`
         res <- mod.filter(_.tags.exists(_.contains(tag))).map(_ => Task.delay(Response(Status.NotModified))).getOrElse(orElse)

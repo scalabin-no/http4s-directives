@@ -11,21 +11,13 @@ import scalaz.syntax.std.option._
 object Directives extends Directives
 
 trait Directives {
-  import net.hamnaberg.http4s.directives
-  import directives.Directive.Filter
+  
+  def result[L, R](result: Result[L, R]) = directives.Directive.result[L, R](result)
+  def success[R](success: R) = directives.Directive.success[R](success)
+  def failure[L](failure: L) = directives.Directive.failure[L](failure)
+  def error[L](error: L)     = directives.Directive.error[L](error)
 
-  type Directive[+L, +R] = directives.Directive[Task, L, R]
-
-  object Directive {
-    def apply[L, R](run: Request => Task[Result[L, R]]): Directive[L, R] = directives.Directive[Task, L, R](run)
-  }
-
-  def result[L, R](result: Result[L, R]) = directives.Directive.result[Task, L, R](result)
-  def success[R](success: R) = directives.Directive.success[Task, R](success)
-  def failure[L](failure: L) = directives.Directive.failure[Task, L](failure)
-  def error[L](error: L)     = directives.Directive.error[Task, L](error)
-
-  def getOrElseF[L, R](opt: Task[Option[R]], orElse: => L) = directives.Directive[Task, L, R] { _ =>
+  def getOrElseF[L, R](opt: Task[Option[R]], orElse: => L) = Directive[L, R] { _ =>
     opt.map(_.cata(Result.Success(_), Result.Failure(orElse)))
   }
 
@@ -34,8 +26,6 @@ trait Directives {
   val commit = directives.Directive.commit
 
   def value[L, R](f: Task[Result[L, R]]) = Directive[L, R](_ => f)
-
-  //implicit def DirectiveMonad[L] = directives.Directive.monad[Task, L]
 
   object request {
     def apply: Directive[Nothing, Request] = Directive[Nothing, Request](req => Task.now(Result.Success(req)))
@@ -58,7 +48,7 @@ trait Directives {
     }
 
     implicit class FilterSyntax(b:Boolean) {
-      def | [L](failure: => L) = Filter(b, () => failure)
+      def | [L](failure: => L) = Directive.Filter(b, () => failure)
     }
 
     implicit def MethodDirective(M: Method)(implicit eq: Equal[Method]): Directive[Response, Method] = when { case req if eq.equal(M, req.method) => M } orElse Response(Status.MethodNotAllowed)
