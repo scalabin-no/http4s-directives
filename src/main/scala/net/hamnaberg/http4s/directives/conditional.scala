@@ -1,34 +1,42 @@
 package net.hamnaberg.http4s.directives
 
+import java.time.{LocalDateTime, ZoneOffset}
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoField
+import java.util.Locale
 
-import org.http4s.{Response, Status}
-import org.http4s.headers._
+import org.http4s._
+import org.http4s.headers.{`If-None-Match`, _}
 
 import scalaz.concurrent.Task
-import Directives._, ops._
+import Directives._
+import ops._
+import org.http4s.parser.HttpHeaderParser
+import org.http4s.util.{CaseInsensitiveString, NonEmptyList}
+
+import scala.util.Try
 
 object conditional {
 
   object get {
-    import java.time.Instant
 
-
-    def ifModifiedSince(lm: Instant, orElse: => Task[Response]): Directive[Response, Response] = {
-      val date = lm.`with`(ChronoField.MILLI_OF_SECOND, 0L)
+    def ifModifiedSince(lm: LocalDateTime, orElse: => Task[Response]): Directive[Response, Response] = {
+      val date = lm.withNano(0).toInstant(ZoneOffset.UTC)
       for {
         mod <- `If-Modified-Since`
         res <- mod.filter(_.date == date).map(_ => Task.delay(Response(Status.NotModified))).getOrElse(orElse)
       } yield res.putHeaders(`Last-Modified`(date))
     }
 
-    /*def ifUnmodifiedSince(lm: Instant, orElse: => F[Response]): Directive[Response, Response] = {
-      val date = lm.`with`(ChronoField.MILLI_OF_SECOND, 0L)
+    def ifUnmodifiedSince(lm: LocalDateTime, orElse: => Task[Response]): Directive[Response, Response] = {
+      val rfcFormatter = DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.ENGLISH)
+      val date = lm.withNano(0)
       for {
-        mod <- `If-Unmodified-Since`
-        res <- mod.filter(_.date == date).map(_ => orElse).getOrElse(F.point(Response(Status.NotModified)))
-      } yield res
-    }*/
+        mod <- request.header(`If-Unmodified-Since`)
+        parsedDate = mod.map(_.value).flatMap(s => Try { LocalDateTime.parse(s, rfcFormatter)}.toOption)
+        res <- parsedDate.filter(_ == date).map(_ => orElse).getOrElse(Task.delay(Response(Status.NotModified)))
+      } yield res.putHeaders(`Last-Modified`(date.toInstant(ZoneOffset.UTC)))
+    }
 
     def ifNoneMatch(tag: ETag.EntityTag, orElse: => Task[Response]): Directive[Response, Response] = {
       for {
@@ -37,12 +45,31 @@ object conditional {
       } yield res.putHeaders(ETag(tag))
     }
 
-    /*def ifMatch(toMatch: Option[NonEmptyList[ETag.EntityTag]], orElse: => F[Response]): Directive[Response, Response] = {
+    def ifMatch(tag: ETag.EntityTag, orElse: => Task[Response]): Directive[Response, Response] = {
       for {
-        mod <- `If-Match`
-        res <- mod.filter(_.tags == toMatch).map(_ => orElse).getOrElse(F.point(Response(Status.NotModified)))
-      } yield res
-    }*/
+        mod <- IfMatch
+        res <- mod.filter(_.tags.exists(_.contains(tag))).map(_ => orElse).getOrElse(Task.delay(Response(Status.NotModified)))
+      } yield res.putHeaders(ETag(tag))
+    }
+
+    object IfMatch extends HeaderKey.Singleton {
+
+      override type HeaderT = `If-None-Match`.HeaderT
+
+      override val name: CaseInsensitiveString = CaseInsensitiveString("If-Match")
+
+      override def matchHeader(header: Header): Option[HeaderT] = if (header.name == name) parse(header.value).toOption else None
+
+      /** Match any existing entity */
+      val `*` = `If-None-Match`(None)
+
+      def apply(first: ETag.EntityTag, rest: ETag.EntityTag*): `If-None-Match` = {
+        `If-None-Match`(Some(NonEmptyList(first, rest:_*)))
+      }
+
+      override def parse(s: String): ParseResult[HeaderT] =
+        HttpHeaderParser.IF_NONE_MATCH(s)
+    }
 
   }
 

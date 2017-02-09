@@ -12,10 +12,10 @@ object Directives extends Directives
 
 trait Directives {
 
-  def result[L, R](result: Result[L, R]) = directives.Directive.result[L, R](result)
-  def success[R](success: R) = directives.Directive.success[R](success)
-  def failure[L](failure: L) = directives.Directive.failure[L](failure)
-  def error[L](error: L)     = directives.Directive.error[L](error)
+  def result[L, R](result: Result[L, R]) = Directive.result[L, R](result)
+  def success[R](success: R) = Directive.success[R](success)
+  def failure[L](failure: L) = Directive.failure[L](failure)
+  def error[L](error: L)     = Directive.error[L](error)
 
   def getOrElseF[L, R](opt: Task[Option[R]], orElse: => L) = Directive[L, R] { _ =>
     opt.map(_.cata(Result.Success(_), Result.Failure(orElse)))
@@ -23,7 +23,7 @@ trait Directives {
 
   def getOrElse[A, L](opt:Option[A], orElse: => L) = opt.cata(success, failure(orElse))
 
-  val commit = directives.Directive.commit
+  val commit = Directive.commit
 
   def value[L, R](f: Task[Result[L, R]]) = Directive[L, R](_ => f)
 
