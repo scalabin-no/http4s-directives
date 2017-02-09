@@ -17,7 +17,7 @@ object Main extends ServerApp {
     import ops._
     import conditional.get._
 
-    val Mapping = AsyncTask().PathMapping
+    val Mapping = Plan().PathMapping
 
     val lm = Instant.now()
 

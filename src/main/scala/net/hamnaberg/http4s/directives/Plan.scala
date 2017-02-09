@@ -5,11 +5,11 @@ import org.http4s.{Request, Response, Status}
 
 import scalaz.concurrent.Task
 
-object AsyncTask {
-  def apply(): AsyncTask = AsyncTask(PartialFunction.empty)
+object Plan {
+  def apply(): Plan = Plan(PartialFunction.empty)
 }
 
-case class AsyncTask(onFail: PartialFunction[Throwable, Task[Response]]) {
+case class Plan(onFail: PartialFunction[Throwable, Task[Response]]) {
   type Intent = PartialFunction[Request, Task[Response]]
 
   def task(pf: PartialFunction[Request, Directive[Response, Response]]): Intent = {
