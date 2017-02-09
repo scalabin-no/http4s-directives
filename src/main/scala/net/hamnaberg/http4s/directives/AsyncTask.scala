@@ -1,5 +1,6 @@
 package net.hamnaberg.http4s.directives
 
+import org.http4s.dsl.Path
 import org.http4s.{Request, Response, Status}
 
 import scalaz.concurrent.Task
@@ -23,4 +24,6 @@ case class AsyncTask(onFail: PartialFunction[Throwable, Task[Response]]) {
       case req if intent.isDefinedAt(from(req)) => intent(from(req))
     }
   }
+
+  val PathMapping : Mapping[Path] = Mapping[Path](r => Path(r.pathInfo))
 }

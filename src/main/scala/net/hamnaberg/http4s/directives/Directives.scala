@@ -4,39 +4,31 @@ import java.time.temporal.ChronoField
 
 import org.http4s._
 import org.http4s.dsl.MethodConcat
-import org.http4s.util.NonEmptyList
 
 import scalaz.{Equal, Monad}
 import scalaz.syntax.monad._
 import scalaz.syntax.std.option._
 import scala.language.{higherKinds, implicitConversions}
+import scalaz.concurrent.Task
 
-object Directives {
-  def apply[F[+_]](implicit M: Monad[F]): Directives[F] = new Directives[F]{
-    implicit val F: Monad[F] = M
-  }
+object Directives extends Directives
 
-  //def task: Directives[Task] = apply[Task]
-}
-
-trait Directives[F[+_]] {
+trait Directives {
   import net.hamnaberg.http4s.directives
   import directives.Directive.Filter
 
-  implicit val F: Monad[F]
-
-  type Directive[+L, +R] = directives.Directive[F, L, R]
+  type Directive[+L, +R] = directives.Directive[Task, L, R]
 
   object Directive {
-    def apply[L, R](run: Request => F[Result[L, R]]): Directive[L, R] = directives.Directive[F, L, R](run)
+    def apply[L, R](run: Request => Task[Result[L, R]]): Directive[L, R] = directives.Directive[Task, L, R](run)
   }
 
-  def result[L, R](result: Result[L, R]) = directives.Directive.result[F, L, R](result)
-  def success[R](success: R) = directives.Directive.success[F, R](success)
-  def failure[L](failure: L) = directives.Directive.failure[F, L](failure)
-  def error[L](error: L)     = directives.Directive.error[F, L](error)
+  def result[L, R](result: Result[L, R]) = directives.Directive.result[Task, L, R](result)
+  def success[R](success: R) = directives.Directive.success[Task, R](success)
+  def failure[L](failure: L) = directives.Directive.failure[Task, L](failure)
+  def error[L](error: L)     = directives.Directive.error[Task, L](error)
 
-  def getOrElseF[L, R](opt: F[Option[R]], orElse: => L) = directives.Directive[F, L, R] { _ =>
+  def getOrElseF[L, R](opt: Task[Option[R]], orElse: => L) = directives.Directive[Task, L, R] { _ =>
     opt.map(_.cata(Result.Success(_), Result.Failure(orElse)))
   }
 
@@ -44,17 +36,27 @@ trait Directives[F[+_]] {
 
   val commit = directives.Directive.commit
 
-  def value[L, R](f: F[Result[L, R]]) = Directive[L, R](_ => f)
+  def value[L, R](f: Task[Result[L, R]]) = Directive[L, R](_ => f)
 
-  implicit def DirectiveMonad[L] = directives.Directive.monad[F, L]
+  //implicit def DirectiveMonad[L] = directives.Directive.monad[Task, L]
 
-  def request: Directive[Nothing, Request] = Directive[Nothing, Request](req => F.point(Result.Success(req)))
+  object request {
+    def apply: Directive[Nothing, Request] = Directive[Nothing, Request](req => Task.now(Result.Success(req)))
+    def headers: Directive[Nothing, Headers] = apply.map(_.headers)
+    def header(key: HeaderKey): Directive[Nothing, Option[Header]] = headers.map(_.get(key.name))
+    def uri: Directive[Nothing, Uri] = apply.map(_.uri)
+    def path: Directive[Nothing, Uri.Path] = uri.map(_.path)
+    def query: Directive[Nothing, Query] = uri.map(_.query)
+
+    def body: Directive[Nothing, EntityBody] = apply.map(_.body)
+    def bodyAs[A : EntityDecoder]: Directive[Nothing, A] = Directive(req => req.as[A].map(Result.Success(_)))
+  }
 
   object ops {
 
     case class when[R](f: PartialFunction[Request, R]){
       def orElse[L](fail: => L) =
-        request.flatMap(r => f.lift(r).cata(success, failure(fail)))
+        request.apply.flatMap(r => f.lift(r).cata(success, failure(fail)))
     }
 
     implicit class FilterSyntax(b:Boolean) {
@@ -65,35 +67,29 @@ trait Directives[F[+_]] {
 
     implicit def MethodsDirective(M: MethodConcat): Directive[Response, Method] = when { case req if M.methods(req.method) => req.method } orElse Response(Status.MethodNotAllowed)
 
-    implicit def HeadersDirective(headers: Headers.type): Directive[Nothing, Headers] = request.map(_.headers)
-
-    implicit def UriDirective(uri: Uri.type): Directive[Nothing, Uri] = request.map(_.uri)
-
-    implicit def QueryDirective(query: Query.type): Directive[Nothing, Query] = Uri.map(_.query)
-
     implicit def HeaderDirective[KEY <: HeaderKey](K: KEY): Directive[Nothing, Option[K.HeaderT]] =
-      HeadersDirective(Headers).map(_.get(K.name).flatMap(K.unapply(_)))
+      request.headers.map(_.get(K.name).flatMap(K.unapply(_)))
 
-    implicit class MonadDecorator[+X](f: F[X]) {
+    implicit class MonadDecorator[+X](f: Task[X]) {
       def successValue = Directive[Nothing, X](_ => f.map(Result.Success(_)))
       def failureValue = Directive[X, Nothing](_ => f.map(Result.Failure(_)))
       def errorValue   = Directive[X, Nothing](_ => f.map(Result.Error(_)))
     }
 
-    implicit def responseDirective(rf: F[Response]): Directive[Nothing, Response] = rf.successValue
+    implicit def responseDirective(rf: Task[Response]): Directive[Nothing, Response] = rf.successValue
   }
 
   object conditionalGET {
     import java.time.Instant
-    import headers._
+    import org.http4s.headers._
     import ops._
 
-    def ifModifiedSince(lm: Instant, orElse: => F[Response]): Directive[Response, Response] = {
+    def ifModifiedSince(lm: Instant, orElse: => Task[Response]): Directive[Response, Response] = {
       val date = lm.`with`(ChronoField.MILLI_OF_SECOND, 0L)
       for {
         mod <- `If-Modified-Since`
-        res <- mod.filter(_.date == date).map(_ => F.point(Response(Status.NotModified))).getOrElse(orElse)
-      } yield res
+        res <- mod.filter(_.date == date).map(_ => Task.delay(Response(Status.NotModified))).getOrElse(orElse)
+      } yield res.putHeaders(`Last-Modified`(date))
     }
 
     /*def ifUnmodifiedSince(lm: Instant, orElse: => F[Response]): Directive[Response, Response] = {
@@ -104,11 +100,11 @@ trait Directives[F[+_]] {
       } yield res
     }*/
 
-    def ifNoneMatch(toMatch: Option[NonEmptyList[ETag.EntityTag]], orElse: => F[Response]): Directive[Response, Response] = {
+    def ifNoneMatch(tag: ETag.EntityTag, orElse: => Task[Response]): Directive[Response, Response] = {
       for {
         mod <- `If-None-Match`
-        res <- mod.filter(_.tags == toMatch).map(_ => F.point(Response(Status.NotModified))).getOrElse(orElse)
-      } yield res
+        res <- mod.filter(_.tags.exists(_.contains(tag))).map(_ => Task.delay(Response(Status.NotModified))).getOrElse(orElse)
+      } yield res.putHeaders(ETag(tag))
     }
 
     /*def ifMatch(toMatch: Option[NonEmptyList[ETag.EntityTag]], orElse: => F[Response]): Directive[Response, Response] = {
