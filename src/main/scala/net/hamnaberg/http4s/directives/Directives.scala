@@ -11,7 +11,7 @@ import scalaz.syntax.std.option._
 object Directives extends Directives
 
 trait Directives {
-  
+
   def result[L, R](result: Result[L, R]) = directives.Directive.result[L, R](result)
   def success[R](success: R) = directives.Directive.success[R](success)
   def failure[L](failure: L) = directives.Directive.failure[L](failure)
@@ -36,7 +36,6 @@ trait Directives {
     def path: Directive[Nothing, Uri.Path] = uri.map(_.path)
     def query: Directive[Nothing, Query] = uri.map(_.query)
 
-    def body: Directive[Nothing, EntityBody] = apply.map(_.body)
     def bodyAs[A : EntityDecoder]: Directive[Nothing, A] = Directive(req => req.as[A].map(Result.Success(_)))
   }
 
