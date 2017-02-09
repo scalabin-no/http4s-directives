@@ -15,7 +15,7 @@ object Main extends ServerApp {
   override def server(args: List[String]): Task[Server] = {
     import Directives._
     import ops._
-    import conditionalGET._
+    import conditional.get._
 
     val Mapping = AsyncTask().PathMapping
 

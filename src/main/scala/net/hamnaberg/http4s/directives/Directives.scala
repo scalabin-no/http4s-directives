@@ -1,15 +1,12 @@
 package net.hamnaberg.http4s.directives
 
-import java.time.temporal.ChronoField
-
 import org.http4s._
 import org.http4s.dsl.MethodConcat
 
-import scalaz.{Equal, Monad}
-import scalaz.syntax.monad._
-import scalaz.syntax.std.option._
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
+import scalaz.Equal
 import scalaz.concurrent.Task
+import scalaz.syntax.std.option._
 
 object Directives extends Directives
 
@@ -44,6 +41,7 @@ trait Directives {
     def apply: Directive[Nothing, Request] = Directive[Nothing, Request](req => Task.now(Result.Success(req)))
     def headers: Directive[Nothing, Headers] = apply.map(_.headers)
     def header(key: HeaderKey): Directive[Nothing, Option[Header]] = headers.map(_.get(key.name))
+
     def uri: Directive[Nothing, Uri] = apply.map(_.uri)
     def path: Directive[Nothing, Uri.Path] = uri.map(_.path)
     def query: Directive[Nothing, Query] = uri.map(_.query)
@@ -77,42 +75,5 @@ trait Directives {
     }
 
     implicit def responseDirective(rf: Task[Response]): Directive[Nothing, Response] = rf.successValue
-  }
-
-  object conditionalGET {
-    import java.time.Instant
-    import org.http4s.headers._
-    import ops._
-
-    def ifModifiedSince(lm: Instant, orElse: => Task[Response]): Directive[Response, Response] = {
-      val date = lm.`with`(ChronoField.MILLI_OF_SECOND, 0L)
-      for {
-        mod <- `If-Modified-Since`
-        res <- mod.filter(_.date == date).map(_ => Task.delay(Response(Status.NotModified))).getOrElse(orElse)
-      } yield res.putHeaders(`Last-Modified`(date))
-    }
-
-    /*def ifUnmodifiedSince(lm: Instant, orElse: => F[Response]): Directive[Response, Response] = {
-      val date = lm.`with`(ChronoField.MILLI_OF_SECOND, 0L)
-      for {
-        mod <- `If-Unmodified-Since`
-        res <- mod.filter(_.date == date).map(_ => orElse).getOrElse(F.point(Response(Status.NotModified)))
-      } yield res
-    }*/
-
-    def ifNoneMatch(tag: ETag.EntityTag, orElse: => Task[Response]): Directive[Response, Response] = {
-      for {
-        mod <- `If-None-Match`
-        res <- mod.filter(_.tags.exists(_.contains(tag))).map(_ => Task.delay(Response(Status.NotModified))).getOrElse(orElse)
-      } yield res.putHeaders(ETag(tag))
-    }
-
-    /*def ifMatch(toMatch: Option[NonEmptyList[ETag.EntityTag]], orElse: => F[Response]): Directive[Response, Response] = {
-      for {
-        mod <- `If-Match`
-        res <- mod.filter(_.tags == toMatch).map(_ => orElse).getOrElse(F.point(Response(Status.NotModified)))
-      } yield res
-    }*/
-
   }
 }
