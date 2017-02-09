@@ -2,7 +2,6 @@ package net.hamnaberg.http4s.directives
 
 import java.time.{LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoField
 import java.util.Locale
 
 import org.http4s._
@@ -29,13 +28,11 @@ object conditional {
     }
 
     def ifUnmodifiedSince(lm: LocalDateTime, orElse: => Task[Response]): Directive[Response, Response] = {
-      val rfcFormatter = DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.ENGLISH)
-      val date = lm.withNano(0)
+      val date = lm.withNano(0).toInstant(ZoneOffset.UTC)
       for {
-        mod <- request.header(`If-Unmodified-Since`)
-        parsedDate = mod.map(_.value).flatMap(s => Try { LocalDateTime.parse(s, rfcFormatter)}.toOption)
-        res <- parsedDate.filter(_ == date).map(_ => orElse).getOrElse(Task.delay(Response(Status.NotModified)))
-      } yield res.putHeaders(`Last-Modified`(date.toInstant(ZoneOffset.UTC)))
+        mod <- IfUnmodifiedSince
+        res <- mod.filter(_.date == date).map(_ => orElse).getOrElse(Task.delay(Response(Status.NotModified)))
+      } yield res.putHeaders(`Last-Modified`(date))
     }
 
     def ifNoneMatch(tag: ETag.EntityTag, orElse: => Task[Response]): Directive[Response, Response] = {
@@ -70,6 +67,19 @@ object conditional {
       override def parse(s: String): ParseResult[HeaderT] =
         HttpHeaderParser.IF_NONE_MATCH(s)
     }
+
+    object IfUnmodifiedSince extends HeaderKey.Singleton {
+
+      override type HeaderT = `If-Modified-Since`.HeaderT
+
+      override def name: CaseInsensitiveString = CaseInsensitiveString("If-Unmodified-Since")
+
+      override def matchHeader(header: Header): Option[HeaderT] = if (header.name == name) parse(header.value).toOption else None
+
+      override def parse(s: String): ParseResult[`If-Modified-Since`] =
+        HttpHeaderParser.IF_MODIFIED_SINCE(s)
+    }
+
 
   }
 
