@@ -6,11 +6,10 @@ import scala.language.higherKinds
 
 object Result {
 
-  def merge[A](result:Result[A, A]) = result match {
+  def merge[A](result:Result[A, A]): A = result match {
     case Success(value) => value
     case Failure(value) => value
     case Error(value) => value
-
   }
 
   case class Success[+A](value:A) extends Result[Nothing, A]
@@ -32,7 +31,7 @@ object Result {
   }
 }
 
-sealed trait Result[+L, +R] {
+sealed trait Result[+L, +R] extends Product with Serializable {
   def flatMap[LL >: L, B](f:R => Result[LL, B]):Result[LL, B] = this match {
     case Result.Success(value) => f(value)
     case Result.Failure(value) => Result.Failure(value)

@@ -12,7 +12,7 @@ import scalaz.concurrent.Task
 
 object Main extends ServerApp {
   override def server(args: List[String]): Task[Server] = {
-    import Directives._
+    import Directive._
     import ops._
     import conditional.get._
 

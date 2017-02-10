@@ -1,11 +1,12 @@
 package net.hamnaberg.http4s.directives
 
-import org.http4s.Request
+import org.http4s.dsl.MethodConcat
+import org.http4s._
 
 import scala.language.reflectiveCalls
-
 import scalaz._
 import scalaz.concurrent.Task
+import scalaz.syntax.std.option._
 
 case class Directive[+L, +R](run: Request => Task[Result[L, R]]){
   def flatMap[LL >: L, B](f: R => Directive[LL, B]) =
@@ -45,13 +46,13 @@ object Directive {
     def point[A](a: => A) = Directive[L, A](_ => Task.delay(Result.Success(a)))
   }
 
-  def point[A](a: => A) = monad[Nothing].point(a)
+  def point[A](a: => A): Directive[Nothing, A] = monad[Nothing].point(a)
 
   def result[L, R](result: => Result[L, R]) = Directive[L, R](_ => Task.delay(result))
 
-  def success[R](success: => R) = result[Nothing, R](Result.Success(success))
-  def failure[L](failure: => L) = result[L, Nothing](Result.Failure(failure))
-  def error[L](error: => L) = result[L, Nothing](Result.Error(error))
+  def success[R](success: => R): Directive[Nothing, R] = result[Nothing, R](Result.Success(success))
+  def failure[L](failure: => L): Directive[L, Nothing] = result[L, Nothing](Result.Failure(failure))
+  def error[L](error: => L): Directive[L, Nothing] = result[L, Nothing](Result.Error(error))
 
   object commit {
     def flatMap[R, A](f:Unit => Directive[R, A]): Directive[R, A] =
@@ -63,6 +64,53 @@ object Directive {
     }}
   }
 
+  def getOrElseF[L, R](task: Task[Option[R]], orElse: => L): Directive[L, R] = Directive[L, R] { _ =>
+    task.map(_.cata(Result.Success(_), Result.Failure(orElse)))
+  }
+
+  def getOrElse[A, L](opt:Option[A], orElse: => L): Directive[L, A] = opt.cata(success(_), failure(orElse))
+
+
   case class Filter[+L](result:Boolean, failure: () => L)
+
+  object ops {
+    import scala.language.implicitConversions
+
+    case class when[R](f: PartialFunction[Request, R]){
+      def orElse[L](fail: => L) =
+        request.apply.flatMap(r => f.lift(r).cata(success(_), failure(fail)))
+    }
+
+    implicit class FilterSyntax(b:Boolean) {
+      def | [L](failure: => L) = Directive.Filter(b, () => failure)
+    }
+
+    implicit def MethodDirective(M: Method)(implicit eq: Equal[Method]): Directive[Response, Method] = when { case req if eq.equal(M, req.method) => M } orElse Response(Status.MethodNotAllowed)
+
+    implicit def MethodsDirective(M: MethodConcat): Directive[Response, Method] = when { case req if M.methods(req.method) => req.method } orElse Response(Status.MethodNotAllowed)
+
+    implicit def HeaderDirective[KEY <: HeaderKey](K: KEY): Directive[Nothing, Option[K.HeaderT]] =
+      request.headers.map(_.get(K.name).flatMap(K.unapply(_)))
+
+    implicit class MonadDecorator[+X](f: Task[X]) {
+      def successValue = Directive[Nothing, X](_ => f.map(Result.Success(_)))
+      def failureValue = Directive[X, Nothing](_ => f.map(Result.Failure(_)))
+      def errorValue   = Directive[X, Nothing](_ => f.map(Result.Error(_)))
+    }
+
+    implicit def responseDirective(rf: Task[Response]): Directive[Nothing, Response] = rf.successValue
+  }
+}
+
+object request {
+  def apply: Directive[Nothing, Request] = Directive[Nothing, Request](req => Task.now(Result.Success(req)))
+  def headers: Directive[Nothing, Headers] = apply.map(_.headers)
+  def header(key: HeaderKey): Directive[Nothing, Option[Header]] = headers.map(_.get(key.name))
+
+  def uri: Directive[Nothing, Uri] = apply.map(_.uri)
+  def path: Directive[Nothing, Uri.Path] = uri.map(_.path)
+  def query: Directive[Nothing, Query] = uri.map(_.query)
+
+  def bodyAs[A : EntityDecoder]: Directive[Nothing, A] = Directive(req => req.as[A].map(Result.Success(_)))
 }
 

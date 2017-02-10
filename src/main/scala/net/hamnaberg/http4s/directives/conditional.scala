@@ -8,7 +8,7 @@ import org.http4s._
 import org.http4s.headers.{`If-None-Match`, _}
 
 import scalaz.concurrent.Task
-import Directives._
+import Directive._
 import ops._
 import org.http4s.parser.HttpHeaderParser
 import org.http4s.util.{CaseInsensitiveString, NonEmptyList}
