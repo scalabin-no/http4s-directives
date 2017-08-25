@@ -3,7 +3,7 @@ package net.hamnaberg.http4s.directives
 import org.http4s.dsl.Path
 import org.http4s.{Request, Response, Status}
 
-import scalaz.concurrent.Task
+import fs2.Task
 
 object Plan {
   def apply(): Plan = Plan(PartialFunction.empty)

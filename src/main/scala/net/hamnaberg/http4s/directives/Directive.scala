@@ -1,12 +1,13 @@
 package net.hamnaberg.http4s.directives
 
+import cats.{Eq, Monad}
 import org.http4s.dsl.MethodConcat
 import org.http4s._
 
 import scala.language.reflectiveCalls
-import scalaz._
-import scalaz.concurrent.Task
-import scalaz.syntax.std.option._
+import fs2.Task
+import cats.instances.option._
+import cats.syntax.option._
 
 case class Directive[+L, +R](run: Request => Task[Result[L, R]]){
   def flatMap[LL >: L, B](f: R => Directive[LL, B]) =
@@ -42,11 +43,14 @@ case class Directive[+L, +R](run: Request => Task[Result[L, R]]){
 object Directive {
 
   implicit def monad[L] = new Monad[({type X[A] = Directive[L, A]})#X]{
-    def bind[A, B](fa: Directive[L, A])(f: (A) => Directive[L, B]) = fa flatMap f
-    def point[A](a: => A) = Directive[L, A](_ => Task.delay(Result.Success(a)))
+    override def flatMap[A, B](fa: Directive[L, A])(f: (A) => Directive[L, B]) = fa flatMap f
+    override def pure[A](a: A) = Directive[L, A](_ => Task.delay(Result.Success(a)))
+
+    override def tailRecM[A, B](a: A)(f: (A) => Directive[L, Either[A, B]]) =
+      tailRecM(a)(a0 => Directive(f(a0).run))
   }
 
-  def point[A](a: => A): Directive[Nothing, A] = monad[Nothing].point(a)
+  def pure[A](a: => A): Directive[Nothing, A] = monad[Nothing].pure(a)
 
   def result[L, R](result: => Result[L, R]) = Directive[L, R](_ => Task.delay(result))
 
@@ -65,10 +69,10 @@ object Directive {
   }
 
   def getOrElseF[L, R](task: Task[Option[R]], orElse: => L): Directive[L, R] = Directive[L, R] { _ =>
-    task.map(_.cata(Result.Success(_), Result.Failure(orElse)))
+    task.map(_.fold[Result[L, R]](Result.Failure(orElse))(Result.Success(_)))
   }
 
-  def getOrElse[A, L](opt:Option[A], orElse: => L): Directive[L, A] = opt.cata(success(_), failure(orElse))
+  def getOrElse[A, L](opt:Option[A], orElse: => L): Directive[L, A] = opt.fold[Directive[L, A]](failure(orElse))(success(_))
 
 
   case class Filter[+L](result:Boolean, failure: () => L)
@@ -77,15 +81,15 @@ object Directive {
     import scala.language.implicitConversions
 
     case class when[R](f: PartialFunction[Request, R]){
-      def orElse[L](fail: => L) =
-        request.apply.flatMap(r => f.lift(r).cata(success(_), failure(fail)))
+      def orElse[L](fail: => L): Directive[L, R] =
+        request.apply.flatMap(r => f.lift(r).fold[Directive[L, R]](failure(fail))(success(_)))
     }
 
     implicit class FilterSyntax(b:Boolean) {
       def | [L](failure: => L) = Directive.Filter(b, () => failure)
     }
 
-    implicit def MethodDirective(M: Method)(implicit eq: Equal[Method]): Directive[Response, Method] = when { case req if eq.equal(M, req.method) => M } orElse Response(Status.MethodNotAllowed)
+    implicit def MethodDirective(M: Method)(implicit eq: Eq[Method]): Directive[Response, Method] = when { case req if eq.eqv(M, req.method) => M } orElse Response(Status.MethodNotAllowed)
 
     implicit def MethodsDirective(M: MethodConcat): Directive[Response, Method] = when { case req if M.methods(req.method) => req.method } orElse Response(Status.MethodNotAllowed)
 
