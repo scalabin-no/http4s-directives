@@ -1,8 +1,6 @@
 package net.hamnaberg.http4s.directives
 
 import java.time.{LocalDateTime, ZoneOffset}
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 import org.http4s._
 import org.http4s.headers.{`If-None-Match`, _}
@@ -19,7 +17,7 @@ object conditional {
   object get {
 
     def ifModifiedSince(lm: LocalDateTime, orElse: => Task[Response]): Directive[Response, Response] = {
-      val date = HttpDate.unsafeFromInstant(lm.withNano(0).toInstant(ZoneOffset.UTC))
+      val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
       for {
         mod <- `If-Modified-Since`
         res <- mod.filter(_.date == date).map(_ => Task.delay(Response(Status.NotModified))).getOrElse(orElse)
@@ -27,7 +25,7 @@ object conditional {
     }
 
     def ifUnmodifiedSince(lm: LocalDateTime, orElse: => Task[Response]): Directive[Response, Response] = {
-      val date = HttpDate.unsafeFromInstant(lm.withNano(0).toInstant(ZoneOffset.UTC))
+      val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
       for {
         mod <- IfUnmodifiedSince
         res <- mod.filter(_.date == date).map(_ => orElse).getOrElse(Task.delay(Response(Status.NotModified)))

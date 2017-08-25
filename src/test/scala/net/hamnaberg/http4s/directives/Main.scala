@@ -8,7 +8,7 @@ import org.http4s.dsl._
 import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
 
-import scalaz.concurrent.Task
+import fs2.Task
 
 object Main extends ServerApp {
   override def server(args: List[String]): Task[Server] = {
@@ -25,7 +25,7 @@ object Main extends ServerApp {
         case Root / "hello" => {
           for {
             _ <- Method.GET | Method.HEAD
-            res <- ifUnmodifiedSince(lm, Ok("Hello World"))
+            res <- ifModifiedSince(lm, Ok("Hello World"))
           } yield {
             res
           }
