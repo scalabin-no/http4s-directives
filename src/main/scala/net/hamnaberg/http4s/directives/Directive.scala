@@ -4,10 +4,7 @@ import cats.{Eq, Monad}
 import org.http4s.dsl.MethodConcat
 import org.http4s._
 
-import scala.language.reflectiveCalls
 import fs2.Task
-import cats.instances.option._
-import cats.syntax.option._
 
 case class Directive[+L, +R](run: Request => Task[Result[L, R]]){
   def flatMap[LL >: L, B](f: R => Directive[LL, B]) =

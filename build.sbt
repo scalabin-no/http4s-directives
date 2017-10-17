@@ -11,8 +11,9 @@ scalacOptions ++= Seq(
   "-encoding", "utf-8"
 )
 
-libraryDependencies += "org.http4s" %% "http4s-core" % "0.17.0-RC2"
-libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.17.0-RC2"
+val http4sVersion = "0.17.3"
 
-libraryDependencies += "org.http4s" %% "http4s-blaze-server" % "0.17.0-RC2" % "test"
+libraryDependencies += "org.http4s" %% "http4s-core" % http4sVersion
+libraryDependencies += "org.http4s" %% "http4s-dsl" % http4sVersion
+libraryDependencies += "org.http4s" %% "http4s-blaze-server" % http4sVersion % "test"
 
