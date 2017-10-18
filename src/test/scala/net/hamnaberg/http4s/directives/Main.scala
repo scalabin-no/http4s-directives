@@ -1,38 +1,41 @@
 package net.hamnaberg.http4s.directives
 
-
 import java.time.LocalDateTime
 
+import cats.effect.IO
 import org.http4s._
-import org.http4s.dsl._
-import org.http4s.server.{Server, ServerApp}
-import org.http4s.server.blaze.BlazeBuilder
+import org.http4s.dsl.io._
+import org.http4s.server.blaze._
+import org.http4s.util.StreamApp
 
-import fs2.Task
 
-object Main extends ServerApp {
-  override def server(args: List[String]): Task[Server] = {
-    import Directive._
+object Main extends StreamApp[IO] {
+
+  override def stream(args: List[String], requestShutdown: IO[Unit]) = {
+    implicit val Direct: Directives[IO] = Directives[IO]
+    val conditional = Conditional[IO]
+
+    import Direct._
     import ops._
-    import conditional.get._
+    import implicits._
 
-    val Mapping = Plan().PathMapping
+    val Mapping = Async().PathMapping
 
     val lm = LocalDateTime.now()
 
-    val service = HttpService(
+    val service = HttpService[IO]{
       Mapping{
         case Root / "hello" => {
           for {
-            _ <- Method.GET | Method.HEAD
-            res <- ifModifiedSince(lm, Ok("Hello World"))
-          } yield {
-            res
-          }
+            _ <- Method.GET
+            res <- conditional.ifModifiedSince(lm, Ok("Hello World"))
+            //res <- Ok("Hello world")
+          } yield res
         }
       }
-    )
+    }
 
-    BlazeBuilder.bindHttp(8080, "localhost").mountService(service, "/").start
+    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(service, "/").serve
   }
 }
+
