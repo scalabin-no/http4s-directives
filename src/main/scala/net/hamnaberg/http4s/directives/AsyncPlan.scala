@@ -5,11 +5,11 @@ import org.http4s.dsl.impl.Path
 import org.http4s._
 
 
-object Async {
-  def apply(): Async = Async(PartialFunction.empty)
+object AsyncPlan {
+  def apply(): AsyncPlan = AsyncPlan(PartialFunction.empty)
 }
 
-case class Async(onFail: PartialFunction[Throwable, IO[Response[IO]]]) {
+case class AsyncPlan(onFail: PartialFunction[Throwable, IO[Response[IO]]]) {
   type Intent = PartialFunction[Request[IO], IO[Response[IO]]]
 
   def task(pf: PartialFunction[Request[IO], Directive[IO, Response[IO], Response[IO]]]): Intent = {
