@@ -76,8 +76,12 @@ trait Directives[F[+_]] {
 
     implicit def MethodsDirective(M: MethodConcat): Directive[Response[F], Method] = when { case req if M.methods(req.method) => req.method } orElse Response[F](Status.MethodNotAllowed)
 
-    implicit def HeaderDirective[KEY <: HeaderKey](K: KEY): Directive[Nothing, Option[K.HeaderT]] =
+    implicit def liftHeaderDirective[KEY <: HeaderKey](K: KEY): Directive[Nothing, Option[K.HeaderT]] =
       request.headers.map(_.get(K.name).flatMap(K.unapply(_)))
+
+    implicit class HeaderDirective[KEY <: HeaderKey](val key: KEY) {
+      def directive: Directive[Nothing, Option[key.HeaderT]] = liftHeaderDirective(key)
+    }
   }
 
   object implicits {

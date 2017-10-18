@@ -13,16 +13,11 @@ import org.http4s.headers._
 import org.http4s.parser.HttpHeaderParser
 import org.http4s.util.CaseInsensitiveString
 
-/*object Conditional {
-  def apply[F[+_]: Directives] = new Conditional[F] {
-    implicit override val F = Directives[F]
-  }
-}*/
-//abstract class WithDirectives[F[+_]](directives: Directives[F])
+object Conditional {
+  def apply[F[+_]] = new Conditional[F] {}
+}
 
 trait Conditional[F[+_]] {
-  //implicit val F: Sync[F]
-
   def ifModifiedSince(lm: LocalDateTime, orElse: => F[Response[F]])(implicit directives: Directives[F]): Directive[F, Response[F], Response[F]] = {
     import directives._
     import ops._
@@ -30,7 +25,7 @@ trait Conditional[F[+_]] {
 
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
-      mod <- HeaderDirective(`If-Modified-Since`)
+      mod <- `If-Modified-Since`.directive
       res <- mod.filter(_.date == date).map(_ => F.delay(Response[F](Status.NotModified))).getOrElse(orElse).successValue
     } yield res.putHeaders(`Last-Modified`(date))
   }
@@ -41,7 +36,7 @@ trait Conditional[F[+_]] {
 
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
-      mod <- HeaderDirective(IfUnmodifiedSince)
+      mod <- IfUnmodifiedSince.directive
       res <- mod.filter(_.date == date).fold(F.delay(Response[F](Status.NotModified)))(_ => orElse).successValue
     } yield res.putHeaders(`Last-Modified`(date))
   }
@@ -50,7 +45,7 @@ trait Conditional[F[+_]] {
     import directives._
     import ops._
     for {
-      mod <- HeaderDirective(`If-None-Match`)
+      mod <- `If-None-Match`.directive
       res <- mod.filter(_.tags.exists(_.exists(a => a == tag))).map(_ => F.delay(Response[F](Status.NotModified))).getOrElse(orElse).successValue
     } yield res.putHeaders(ETag(tag))
   }
@@ -60,7 +55,7 @@ trait Conditional[F[+_]] {
     import ops._
 
     for {
-      mod <- HeaderDirective(IfMatch)
+      mod <- IfMatch.directive
       res <- mod.filter(_.tags.exists(_.exists(a => a == tag))).map(_ => orElse).getOrElse(F.delay(Response[F](Status.NotModified))).successValue
     } yield res.putHeaders(ETag(tag))
   }

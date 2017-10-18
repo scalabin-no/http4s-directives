@@ -12,8 +12,8 @@ import org.http4s.util.StreamApp
 object Main extends StreamApp[IO] {
 
   override def stream(args: List[String], requestShutdown: IO[Unit]) = {
-    implicit val Direct = Directives[IO]
-    val conditional = new Conditional[IO] {}
+    implicit val Direct: Directives[IO] = Directives[IO]
+    val conditional = Conditional[IO]
 
     import Direct._
     import ops._
