@@ -1,14 +1,14 @@
-package net.hamnaberg.http4s
-package directives
+package no.shiplog.http4s.directives
 
 import cats.Eq
 import cats.effect.Sync
 import org.http4s.{EntityDecoder, _}
 import cats.syntax.functor._
 import org.http4s.dsl.impl.MethodConcat
-
 import scala.language.higherKinds
 import scala.language.implicitConversions
+
+import no.shiplog.http4s.directives
 
 
 object Directives {

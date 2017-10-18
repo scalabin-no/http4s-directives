@@ -1,4 +1,4 @@
-package net.hamnaberg.http4s.directives
+package no.shiplog.http4s.directives
 
 import cats.effect.IO
 import org.http4s.dsl.impl.Path

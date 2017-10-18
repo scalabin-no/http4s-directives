@@ -1,4 +1,4 @@
-package net.hamnaberg.http4s.directives
+package no.shiplog.http4s.directives
 
 import java.time.LocalDateTime
 
@@ -17,7 +17,7 @@ object Main extends StreamApp[IO] {
 
     import Direct._
     import ops._
-    import implicits._
+    import org.http4s.implicits._
 
     val Mapping = Async().PathMapping
 
