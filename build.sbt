@@ -1,4 +1,4 @@
-organization := "net.hamnaberg.http4s"
+organization := "no.scalabin.http4s"
 
 name := "http4s-directives"
 

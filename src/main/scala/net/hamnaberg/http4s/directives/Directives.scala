@@ -1,4 +1,4 @@
-package net.hamnaberg.http4s
+package no.scalabin.http4s
 package directives
 
 import cats.Eq

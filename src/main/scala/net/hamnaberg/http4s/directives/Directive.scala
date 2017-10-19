@@ -1,4 +1,4 @@
-package net.hamnaberg.http4s.directives
+package no.scalabin.http4s.directives
 
 import cats.Monad
 import cats.effect.Sync
