@@ -1,28 +1,33 @@
 package net.hamnaberg.http4s.directives
 
-import cats.effect.IO
+import cats.syntax.functor._
+import cats.syntax.flatMap._
+import cats.syntax.applicativeError._
 import org.http4s.dsl.impl.Path
 import org.http4s._
+import cats.effect.Async
+
+import scala.language.higherKinds
 
 
 object AsyncPlan {
-  def apply(): AsyncPlan = AsyncPlan(PartialFunction.empty)
+  def apply[F[+_]: Async](): AsyncPlan[F] = AsyncPlan(PartialFunction.empty)
 }
 
-case class AsyncPlan(onFail: PartialFunction[Throwable, IO[Response[IO]]]) {
-  type Intent = PartialFunction[Request[IO], IO[Response[IO]]]
+case class AsyncPlan[F[+_]: Async](onFail: PartialFunction[Throwable, F[Response[F]]]) {
+  type Intent = PartialFunction[Request[F], F[Response[F]]]
 
-  def task(pf: PartialFunction[Request[IO], Directive[IO, Response[IO], Response[IO]]]): Intent = {
+  def task(pf: PartialFunction[Request[F], Directive[F, Response[F], Response[F]]]): Intent = {
     case req if pf.isDefinedAt(req) => pf(req).run(req).map(Result.merge).attempt.flatMap(
       _.fold({
         case t if onFail.isDefinedAt(t) => onFail(t)
-        case t => IO.pure(Response(Status.InternalServerError))
-      }, IO.pure)
+        case t => Async[F].pure(Response(Status.InternalServerError))
+      }, Async[F].pure)
     )
   }
 
-  case class Mapping[X](from: Request[IO] => X) {
-    def apply(intent: PartialFunction[X, Directive[IO, Response[IO], Response[IO]]]): Intent = task {
+  case class Mapping[X](from: Request[F] => X) {
+    def apply(intent: PartialFunction[X, Directive[F, Response[F], Response[F]]]): Intent = task {
       case req if intent.isDefinedAt(from(req)) => intent(from(req))
     }
   }

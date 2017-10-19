@@ -19,7 +19,7 @@ object Main extends StreamApp[IO] {
     import ops._
     import implicits._
 
-    val Mapping = AsyncPlan().PathMapping
+    val Mapping = AsyncPlan[IO]().PathMapping
 
     val lm = LocalDateTime.now()
 
