@@ -5,24 +5,24 @@ import cats.syntax.flatMap._
 import cats.syntax.applicativeError._
 import org.http4s.dsl.impl.Path
 import org.http4s._
-import cats.effect.Async
+import cats.effect.Sync
 
 import scala.language.higherKinds
 
 
-object AsyncPlan {
-  def apply[F[+_]: Async](): AsyncPlan[F] = AsyncPlan(PartialFunction.empty)
+object Plan {
+  def apply[F[+_]: Sync](): Plan[F] = Plan(PartialFunction.empty)
 }
 
-case class AsyncPlan[F[+_]: Async](onFail: PartialFunction[Throwable, F[Response[F]]]) {
+case class Plan[F[+_]: Sync](onFail: PartialFunction[Throwable, F[Response[F]]]) {
   type Intent = PartialFunction[Request[F], F[Response[F]]]
 
   def task(pf: PartialFunction[Request[F], Directive[F, Response[F], Response[F]]]): Intent = {
     case req if pf.isDefinedAt(req) => pf(req).run(req).map(Result.merge).attempt.flatMap(
       _.fold({
         case t if onFail.isDefinedAt(t) => onFail(t)
-        case t => Async[F].pure(Response(Status.InternalServerError))
-      }, Async[F].pure)
+        case t => Sync[F].pure(Response(Status.InternalServerError))
+      }, Sync[F].pure)
     )
   }
 
