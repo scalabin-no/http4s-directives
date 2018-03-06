@@ -12,6 +12,7 @@ import org.http4s.util.StreamApp
 object Main extends StreamApp[IO] {
 
   override def stream(args: List[String], requestShutdown: IO[Unit]) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
     implicit val Direct: Directives[IO] = Directives[IO]
     val conditional = Conditional[IO]
 
