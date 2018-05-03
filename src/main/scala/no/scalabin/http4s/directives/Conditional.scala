@@ -3,15 +3,12 @@ package no.scalabin.http4s.directives
 import java.time.{LocalDateTime, ZoneOffset}
 
 import cats.data.NonEmptyList
-import cats.effect.Sync
-import cats.syntax.flatMap._
-import cats.syntax.functor._
-
-import scala.language.higherKinds
 import org.http4s._
 import org.http4s.headers._
 import org.http4s.parser.HttpHeaderParser
 import org.http4s.util.CaseInsensitiveString
+
+import scala.language.higherKinds
 
 object Conditional {
   def apply[F[+_]] = new Conditional[F] {}
@@ -21,7 +18,6 @@ trait Conditional[F[+_]] {
   def ifModifiedSince(lm: LocalDateTime, orElse: => F[Response[F]])(implicit directives: Directives[F]): Directive[F, Response[F], Response[F]] = {
     import directives._
     import ops._
-    import implicits._
 
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {

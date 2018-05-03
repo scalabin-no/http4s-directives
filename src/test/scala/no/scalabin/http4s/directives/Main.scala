@@ -2,23 +2,23 @@ package no.scalabin.http4s.directives
 
 import java.time.LocalDateTime
 
-import cats.effect.IO
 import org.http4s._
 import org.http4s.dsl.io._
-import org.http4s.server.blaze._
-import org.http4s.util.StreamApp
-
+import cats.effect.IO
+import fs2.StreamApp
+import org.http4s.dsl.impl.Root
+import org.http4s.server.blaze.BlazeBuilder
 
 object Main extends StreamApp[IO] {
 
+  import scala.concurrent.ExecutionContext.Implicits.global
+
   override def stream(args: List[String], requestShutdown: IO[Unit]) = {
-    import scala.concurrent.ExecutionContext.Implicits.global
     implicit val Direct: Directives[IO] = Directives[IO]
     val conditional = Conditional[IO]
 
     import Direct._
-    import ops._
-    import implicits._
+          import ops._
 
     val Mapping = Plan[IO]().PathMapping
 
@@ -39,4 +39,3 @@ object Main extends StreamApp[IO] {
     BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(service, "/").serve
   }
 }
-

@@ -1,11 +1,11 @@
 package no.scalabin.http4s.directives
 
-import cats.syntax.functor._
-import cats.syntax.flatMap._
-import cats.syntax.applicativeError._
-import org.http4s.dsl.impl.Path
-import org.http4s._
 import cats.effect.Sync
+import cats.syntax.applicativeError._
+import cats.syntax.flatMap._
+import cats.syntax.functor._
+import org.http4s._
+import org.http4s.dsl.impl.Path
 
 import scala.language.higherKinds
 
