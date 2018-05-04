@@ -1,11 +1,13 @@
 package no.scalabin.http4s.directives
 
 import cats.Eq
+import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.syntax.functor._
 import org.http4s.dsl.impl.MethodConcat
 import org.http4s.util.CaseInsensitiveString
 import org.http4s._
+import org.http4s.headers.Allow
 
 import scala.language.{higherKinds, implicitConversions}
 
@@ -13,7 +15,10 @@ trait RequestDirectives[F[+_]] {
 
   implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Sync[F]): Directive[F, Response[F], Method] = when[F, Method] { case req if eq.eqv(M, req.method) => M } orElse Response[F](Status.MethodNotAllowed)
 
-  implicit def MethodsDirective(M: MethodConcat)(implicit sync: Sync[F]): Directive[F, Response[F], Method] = when[F, Method] { case req if M.methods(req.method) => req.method } orElse Response[F](Status.MethodNotAllowed)
+  implicit def MethodsDirective(M: MethodConcat)(implicit sync: Sync[F]): Directive[F, Response[F], Method] = when[F, Method] { case req if M.methods(req.method) => req.method } orElse Response[F](Status.MethodNotAllowed).putHeaders({
+    val methods = M.methods.toList.sortBy(_.name)
+    Allow(NonEmptyList(methods.head, methods.tail))
+  })
 
   implicit def liftHeaderDirective[KEY <: HeaderKey](K: KEY)(implicit sync: Sync[F]): Directive[F, Nothing, Option[K.HeaderT]] =
     headers.map(_.get(K.name).flatMap(K.unapply(_)))
