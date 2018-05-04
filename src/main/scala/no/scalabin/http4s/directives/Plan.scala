@@ -5,7 +5,6 @@ import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import org.http4s._
-import org.http4s.dsl.impl.Path
 
 import scala.language.higherKinds
 
@@ -32,6 +31,6 @@ case class Plan[F[+_]: Sync](onFail: PartialFunction[Throwable, F[Response[F]]])
     }
   }
 
-  val PathMapping : Mapping[Path] = Mapping[Path](r => Path(r.pathInfo))
+  lazy val PathMapping : Mapping[Uri.Path] = Mapping[Uri.Path](r => r.uri.path)
 }
 
