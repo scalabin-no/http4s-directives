@@ -2,7 +2,7 @@ organization := "no.scalabin.http4s"
 
 name := "http4s-directives"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.5"
 
 scalacOptions ++= Seq(
   "-feature",

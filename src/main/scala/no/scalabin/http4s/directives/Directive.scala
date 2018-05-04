@@ -6,9 +6,9 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import org.http4s._
 
-import scala.language.higherKinds
+import scala.language.{higherKinds, reflectiveCalls}
 
-case class Directive[F[+_]: Sync, +L, +R](run: Request[F] => F[Result[L, R]]){
+case class  Directive[F[+_]: Sync, +L, +R](run: Request[F] => F[Result[L, R]]){
   def flatMap[LL >: L, B](f: R => Directive[F, LL, B]): Directive[F, LL, B] =
     Directive[F, LL, B](req => run(req).flatMap{
       case Result.Success(value) => f(value).run(req)
@@ -42,7 +42,7 @@ case class Directive[F[+_]: Sync, +L, +R](run: Request[F] => F[Result[L, R]]){
 
 object Directive {
 
-  implicit def monad[F[+ _] : Sync, L] = new Monad[({type X[A] = Directive[F, L, A]})#X] {
+  implicit def monad[F[+ _] : Sync, L]: Monad[({type X[A] = Directive[F, L, A]})#X] = new Monad[({type X[A] = Directive[F, L, A]})#X] {
     override def flatMap[A, B](fa: Directive[F, L, A])(f: (A) => Directive[F, L, B]) = fa flatMap f
 
     override def pure[A](a: A) = Directive[F, L, A](_ => Sync[F].delay(Result.Success(a)))
