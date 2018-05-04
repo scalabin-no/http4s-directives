@@ -47,7 +47,7 @@ trait Directives[F[+_]] {
   type when[A] = directives.when[F, A]
   val when = directives.when
 
-  object ops extends DirectiveOps[F]
+  object ops extends DirectiveOps[F] with RequestDirectives[F]
 
   object implicits {
     implicit def wrapSuccess[S](f: F[S]): directives.Directive[F, Nothing, S] = ops.MonadDecorator(f).successValue

@@ -1,14 +1,27 @@
 package no.scalabin.http4s.directives
 
+import cats.Eq
 import cats.effect.Sync
 import cats.syntax.functor._
-
+import org.http4s.dsl.impl.MethodConcat
 import org.http4s.util.CaseInsensitiveString
-import org.http4s.{EntityDecoder, Header, HeaderKey, Headers, Query, Request, Uri}
+import org.http4s._
 
-import scala.language.higherKinds
+import scala.language.{higherKinds, implicitConversions}
 
 trait RequestDirectives[F[+_]] {
+
+  implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Sync[F]): Directive[F, Response[F], Method] = when[F, Method] { case req if eq.eqv(M, req.method) => M } orElse Response[F](Status.MethodNotAllowed)
+
+  implicit def MethodsDirective(M: MethodConcat)(implicit sync: Sync[F]): Directive[F, Response[F], Method] = when[F, Method] { case req if M.methods(req.method) => req.method } orElse Response[F](Status.MethodNotAllowed)
+
+  implicit def liftHeaderDirective[KEY <: HeaderKey](K: KEY)(implicit sync: Sync[F]): Directive[F, Nothing, Option[K.HeaderT]] =
+    headers.map(_.get(K.name).flatMap(K.unapply(_)))
+
+  implicit class HeaderDirective[KEY <: HeaderKey](val key: KEY)(implicit sync: Sync[F]) {
+    def directive: Directive[F, Nothing, Option[key.HeaderT]] = liftHeaderDirective(key)
+  }
+
   def request(implicit sync: Sync[F]): Directive[F, Nothing, Request[F]] = Directive[F, Nothing, Request[F]](req => sync.pure(Result.Success(req)))
 
   def headers(implicit sync: Sync[F]): Directive[F, Nothing, Headers] = request.map(_.headers)
