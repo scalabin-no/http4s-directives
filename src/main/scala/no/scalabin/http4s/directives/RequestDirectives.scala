@@ -21,22 +21,23 @@ trait RequestDirectives[F[+_]] {
   })
 
   implicit def liftHeaderDirective[KEY <: HeaderKey](K: KEY)(implicit sync: Sync[F]): Directive[F, Nothing, Option[K.HeaderT]] =
-    headers.map(_.get(K.name).flatMap(K.unapply(_)))
+    request.headers.map(_.get(K.name).flatMap(K.unapply(_)))
 
   implicit class HeaderDirective[KEY <: HeaderKey](val key: KEY)(implicit sync: Sync[F]) {
     def directive: Directive[F, Nothing, Option[key.HeaderT]] = liftHeaderDirective(key)
   }
 
-  def request(implicit sync: Sync[F]): Directive[F, Nothing, Request[F]] = Directive[F, Nothing, Request[F]](req => sync.pure(Result.Success(req)))
+  object request {
+    def apply(implicit sync: Sync[F]): Directive[F, Nothing, Request[F]] = Directive[F, Nothing, Request[F]](req => sync.pure(Result.Success(req)))
 
-  def headers(implicit sync: Sync[F]): Directive[F, Nothing, Headers] = request.map(_.headers)
-  def header(key: HeaderKey)(implicit sync: Sync[F]): Directive[F, Nothing, Option[Header]] = headers.map(_.get(key.name))
-  def header(key: String)(implicit sync: Sync[F]): Directive[F, Nothing, Option[Header]] = headers.map(_.get(CaseInsensitiveString(key)))
+    def headers(implicit sync: Sync[F]): Directive[F, Nothing, Headers] = apply.map(_.headers)
+    def header(key: HeaderKey)(implicit sync: Sync[F]): Directive[F, Nothing, Option[Header]] = headers.map(_.get(key.name))
+    def header(key: String)(implicit sync: Sync[F]): Directive[F, Nothing, Option[Header]] = headers.map(_.get(CaseInsensitiveString(key)))
 
-  def uri(implicit sync: Sync[F]): Directive[F, Nothing, Uri] = request.map(_.uri)
-  def path(implicit sync: Sync[F]): Directive[F, Nothing, Uri.Path] = uri.map(_.path)
-  def query(implicit sync: Sync[F]): Directive[F, Nothing, Query] = uri.map(_.query)
+    def uri(implicit sync: Sync[F]): Directive[F, Nothing, Uri] = apply.map(_.uri)
+    def path(implicit sync: Sync[F]): Directive[F, Nothing, Uri.Path] = uri.map(_.path)
+    def query(implicit sync: Sync[F]): Directive[F, Nothing, Query] = uri.map(_.query)
 
-  def bodyAs[A](implicit dec: EntityDecoder[F, A], sync: Sync[F]): Directive[F, Nothing, A] = Directive(req => req.as[A].map(Result.Success(_)))
-
+    def bodyAs[A](implicit dec: EntityDecoder[F, A], sync: Sync[F]): Directive[F, Nothing, A] = Directive(req => req.as[A].map(Result.Success(_)))
+  }
 }
