@@ -20,7 +20,7 @@ object Main extends StreamApp[IO] {
     import Direct._
           import ops._
 
-    val Mapping = Plan[IO]().PathMapping
+    val Mapping = Plan[IO]().Mapping(req => Path(req.uri.path))
 
     val lm = LocalDateTime.now()
 
