@@ -17,6 +17,3 @@ libraryDependencies += "org.http4s" %% "http4s-core" % http4sVersion
 libraryDependencies += "org.typelevel" %% "cats-effect" % "0.10.1"
 libraryDependencies += "org.http4s" %% "http4s-dsl" % http4sVersion
 libraryDependencies += "org.http4s" %% "http4s-blaze-server" % http4sVersion % "test"
-
-
-overridePublishBothSettings
