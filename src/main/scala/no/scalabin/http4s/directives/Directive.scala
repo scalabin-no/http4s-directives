@@ -43,11 +43,11 @@ case class  Directive[F[+_]: Sync, +L, +R](run: Request[F] => F[Result[L, R]]){
 object Directive {
 
   implicit def monad[F[+ _] : Sync, L]: Monad[({type X[A] = Directive[F, L, A]})#X] = new Monad[({type X[A] = Directive[F, L, A]})#X] {
-    override def flatMap[A, B](fa: Directive[F, L, A])(f: (A) => Directive[F, L, B]) = fa flatMap f
+    override def flatMap[A, B](fa: Directive[F, L, A])(f: A => Directive[F, L, B]) = fa flatMap f
 
     override def pure[A](a: A) = Directive[F, L, A](_ => Sync[F].delay(Result.Success(a)))
 
-    override def tailRecM[A, B](a: A)(f: (A) => Directive[F, L, Either[A, B]]) =
+    override def tailRecM[A, B](a: A)(f: A => Directive[F, L, Either[A, B]]) =
       tailRecM(a)(a0 => Directive(f(a0).run))
   }
 
@@ -61,6 +61,10 @@ object Directive {
 
   def error[F[+ _] : Sync, L](error: => L): Directive[F, L, Nothing] = result[F, L, Nothing](Result.Error(error))
 
+
+  def successF[F[+ _] : Sync, X](f: F[X]): Directive[F, Nothing, X] = Directive[F, Nothing, X](_ => f.map(Result.Success(_)))
+  def failureF[F[+ _] : Sync, X](f: F[X]): Directive[F, X, Nothing] = Directive[F, X, Nothing](_ => f.map(Result.Failure(_)))
+  def errorF[F[+ _] : Sync, X](f: F[X]): Directive[F, X, Nothing] = Directive[F, X, Nothing](_ => f.map(Result.Error(_)))
 
   case class Filter[+L](result: Boolean, failure: () => L)
 
