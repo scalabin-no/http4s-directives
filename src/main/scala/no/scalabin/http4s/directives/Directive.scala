@@ -1,6 +1,6 @@
 package no.scalabin.http4s.directives
 
-import cats.Monad
+import cats.{Applicative, Monad}
 import cats.effect.Sync
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -50,6 +50,8 @@ object Directive {
     override def tailRecM[A, B](a: A)(f: A => Directive[F, L, Either[A, B]]) =
       tailRecM(a)(a0 => Directive(f(a0).run))
   }
+
+  def request[F[+ _]: Sync]: Directive[F, Nothing, Request[F]] = Directive(req => Sync[F].pure(Result.Success(req)))
 
   def pure[F[+ _] : Sync, A](a: => A): Directive[F, Nothing, A] = monad[F, Nothing].pure(a)
 

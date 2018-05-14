@@ -28,13 +28,12 @@ trait RequestDirectives[F[+_]] {
   }
 
   object request {
-    def apply(implicit sync: Sync[F]): Directive[F, Nothing, Request[F]] = Directive[F, Nothing, Request[F]](req => sync.pure(Result.Success(req)))
 
-    def headers(implicit sync: Sync[F]): Directive[F, Nothing, Headers] = apply.map(_.headers)
+    def headers(implicit sync: Sync[F]): Directive[F, Nothing, Headers] = Directive.request.map(_.headers)
     def header(key: HeaderKey)(implicit sync: Sync[F]): Directive[F, Nothing, Option[Header]] = headers.map(_.get(key.name))
     def header(key: String)(implicit sync: Sync[F]): Directive[F, Nothing, Option[Header]] = headers.map(_.get(CaseInsensitiveString(key)))
 
-    def uri(implicit sync: Sync[F]): Directive[F, Nothing, Uri] = apply.map(_.uri)
+    def uri(implicit sync: Sync[F]): Directive[F, Nothing, Uri] = Directive.request.map(_.uri)
     def path(implicit sync: Sync[F]): Directive[F, Nothing, Uri.Path] = uri.map(_.path)
     def query(implicit sync: Sync[F]): Directive[F, Nothing, Query] = uri.map(_.query)
 

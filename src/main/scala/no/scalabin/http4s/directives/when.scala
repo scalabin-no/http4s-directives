@@ -5,15 +5,15 @@ import org.http4s.Request
 
 import scala.language.higherKinds
 
-case class when[F[+_]: Sync, R](f:PartialFunction[Request[F], R]) extends RequestDirectives[F] {
+case class when[F[+_]: Sync, R](f:PartialFunction[Request[F], R]) {
   def orElse[L](fail: => L): Directive[F, L, R] =
-    request.apply.flatMap(req => f.lift(req) match {
+    Directive.request.flatMap(req => f.lift(req) match {
       case Some(r) => Directive.success(r)
       case None => Directive.failure(fail)
     })
 
   def orElseF[L](fail: => F[L]): Directive[F, L, R] =
-    request.apply.flatMap(req => f.lift(req) match {
+    Directive.request.flatMap(req => f.lift(req) match {
       case Some(r) => Directive.success(r)
       case None => Directive.failureF(fail)
     })

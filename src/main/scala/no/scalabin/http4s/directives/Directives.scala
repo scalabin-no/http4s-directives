@@ -30,6 +30,10 @@ trait Directives[F[+_]] {
   def failure[L](failure: L) = directives.Directive.failure[F, L](failure)
   def error[L](error: L)     = directives.Directive.error[F, L](error)
 
+  def successF[R](success: F[R]) = directives.Directive.successF[F, R](success)
+  def failureF[L](failure: F[L]) = directives.Directive.failureF[F, L](failure)
+  def errorF[L](error: F[L])     = directives.Directive.errorF[F, L](error)
+
   def getOrElseF[L, R](opt:F[Option[R]], orElse: => L) = directives.Directive.getOrElseF[F, L, R](opt, orElse)
 
   def getOrElse[A, L](opt:Option[A], orElse: => L) = directives.Directive.getOrElse[F, L, A](opt, orElse)
