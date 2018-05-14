@@ -54,7 +54,7 @@ object HttpClientProxy extends StreamApp[IO] {
     import d._
     import ops._
 
-    Method.GET.flatMap(_ => directives.Directive.successF(res))
+    Method.GET.flatMap(_ => successF(res))
 
   }
 }
