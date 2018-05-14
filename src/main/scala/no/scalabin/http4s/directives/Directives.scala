@@ -34,9 +34,9 @@ trait Directives[F[+_]] {
   def failureF[L](failure: F[L]) = directives.Directive.failureF[F, L](failure)
   def errorF[L](error: F[L])     = directives.Directive.errorF[F, L](error)
 
-  def getOrElseF[L, R](opt:F[Option[R]], orElse: => L) = directives.Directive.getOrElseF[F, L, R](opt, orElse)
+  def getOrElseF[L, R](opt:F[Option[R]], orElse: => F[L]) = directives.Directive.getOrElseF[F, L, R](opt, orElse)
 
-  def getOrElse[A, L](opt:Option[A], orElse: => L) = directives.Directive.getOrElse[F, L, A](opt, orElse)
+  def getOrElse[A, L](opt:Option[A], orElse: => F[L]) = directives.Directive.getOrElse[F, L, A](opt, orElse)
 
   type Filter[+L] = directives.Directive.Filter[L]
   val Filter      = directives.Directive.Filter

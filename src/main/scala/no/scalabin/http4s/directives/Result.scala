@@ -12,6 +12,10 @@ object Result {
     case Error(value) => value
   }
 
+  def success[A](a: A): Result[Nothing, A] = Success(a)
+  def failure[A](a: A): Result[A, Nothing] = Failure(a)
+  def error[A](a: A): Result[A, Nothing] = Error(a)
+
   case class Success[+A](value: A) extends Result[Nothing, A]
 
   case class Failure[+A](value: A) extends Result[A, Nothing]
