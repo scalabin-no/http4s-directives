@@ -22,12 +22,8 @@ object HttpClientProxy extends StreamApp[IO] {
 
     val service = HttpService[IO] {
       pathMapping {
-        case _ => for {
-          _ <- Method.GET
-          res <- getExample().successValue
-        } yield {
-          res
-        }
+        case "/flatMap" => directiveflatMap(getExample())(directives)
+        case "/" => directiveFor(getExample())(directives)
       }
     }
 
@@ -41,12 +37,12 @@ object HttpClientProxy extends StreamApp[IO] {
   type ValueDirective[F[+_], A] = Directive[F, Response[F], A]
   type ResponseDirective[F[+_]] = ValueDirective[F, Response[F]]
 
-  def directiveFor[F[+_]](res: F[Response[F]])(implicit d: Directives[F]): ResponseDirective[F] = {
+  def directiveFor[F[+_]](fRes: F[Response[F]])(implicit d: Directives[F]): ResponseDirective[F] = {
     import d._
     import ops._
     for {
       _ <- Method.GET
-      res <- res.successValue
+      res <- fRes.successValue
     } yield { res }
   }
 
