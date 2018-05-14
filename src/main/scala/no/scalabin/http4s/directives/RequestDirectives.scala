@@ -27,31 +27,33 @@ trait RequestDirectives[F[+_]] {
     def directive: Directive[F, Nothing, Option[key.HeaderT]] = liftHeaderDirective(key)
   }
 
-  object request {
+  object request extends RequestOps
+}
 
-    def headers(implicit sync: Sync[F]): Directive[F, Nothing, Headers] = Directive.request.map(_.headers)
-    def header[KEY <: HeaderKey](key: KEY)(implicit sync: Sync[F]): Directive[F, Nothing, Option[key.HeaderT]] = headers.map(_.get(key.name)).map(_.flatMap(h => key.matchHeader(h)))
-    def headerOrElse[KEY <: HeaderKey, L](key: KEY, f: => F[L])(implicit sync: Sync[F]): Directive[F, L, key.HeaderT] = header(key).flatMap(opt => Directive.getOrElse(opt, f))
-    def header(key: String)(implicit sync: Sync[F]): Directive[F, Nothing, Option[Header]] = headers.map(_.get(CaseInsensitiveString(key)))
-    def headerOrElse[L](key: String, f: => F[L])(implicit sync: Sync[F]): Directive[F, L, Header] = header(key).flatMap(opt => Directive.getOrElse(opt, f))
+trait RequestOps {
 
-    def cookies(implicit sync: Sync[F]): Directive[F, Nothing, Option[NonEmptyList[Cookie]]] = header(org.http4s.headers.Cookie).map(_.map(_.values))
+  def headers[F[+_]: Sync]: Directive[F, Nothing, Headers] = Directive.request.map(_.headers)
+  def header[F[+_]: Sync, KEY <: HeaderKey](key: KEY): Directive[F, Nothing, Option[key.HeaderT]] = headers.map(_.get(key.name)).map(_.flatMap(h => key.matchHeader(h)))
+  def headerOrElse[F[+_]: Sync, KEY <: HeaderKey, L](key: KEY, f: => F[L]): Directive[F, L, key.HeaderT] = header(key).flatMap(opt => Directive.getOrElse(opt, f))
+  def header[F[+_]: Sync](key: String): Directive[F, Nothing, Option[Header]] = headers.map(_.get(CaseInsensitiveString(key)))
+  def headerOrElse[F[+_]: Sync, L](key: String, f: => F[L]): Directive[F, L, Header] = header(key).flatMap(opt => Directive.getOrElse(opt, f))
 
-    def cookiesOrElse[L](f: => F[L])(implicit sync: Sync[F]): Directive[F, L, NonEmptyList[Cookie]] =
-      cookies.flatMap(opt => Directive.getOrElse(opt, f))
+  def cookies[F[+_]: Sync]: Directive[F, Nothing, Option[NonEmptyList[Cookie]]] = header(org.http4s.headers.Cookie).map(_.map(_.values))
 
-    def cookie(name: String)(implicit sync: Sync[F]): Directive[F, Nothing, Option[Cookie]] = cookies.map(_.flatMap(_.find(c => c.name == name)))
+  def cookiesOrElse[F[+_]: Sync, L](f: => F[L]): Directive[F, L, NonEmptyList[Cookie]] =
+    cookies.flatMap(opt => Directive.getOrElse(opt, f))
 
-    def uri(implicit sync: Sync[F]): Directive[F, Nothing, Uri] = Directive.request.map(_.uri)
-    def path(implicit sync: Sync[F]): Directive[F, Nothing, Uri.Path] = uri.map(_.path)
-    def query(implicit sync: Sync[F]): Directive[F, Nothing, Query] = uri.map(_.query)
+  def cookie[F[+_]: Sync](name: String): Directive[F, Nothing, Option[Cookie]] = cookies.map(_.flatMap(_.find(c => c.name == name)))
 
-    def queryParams(name: String)(implicit sync: Sync[F]): Directive[F, Nothing, Seq[String]] = query.map(_.multiParams.getOrElse(name, Nil))
-    def queryParam(name: String)(implicit sync: Sync[F]): Directive[F, Nothing, Option[String]] = query.map(_.params.get(name))
-    def queryParamOrElse[L](name: String, f: => F[L])(implicit sync: Sync[F]): Directive[F, L, String] = queryParam(name).flatMap(
-      opt => Directive.getOrElse(opt, f)
-    )
+  def uri[F[+_]: Sync]: Directive[F, Nothing, Uri] = Directive.request.map(_.uri)
+  def path[F[+_]: Sync]: Directive[F, Nothing, Uri.Path] = uri.map(_.path)
+  def query[F[+_]: Sync]: Directive[F, Nothing, Query] = uri.map(_.query)
 
-    def bodyAs[A](implicit dec: EntityDecoder[F, A], sync: Sync[F]): Directive[F, Nothing, A] = Directive(req => req.as[A].map(Result.Success(_)))
-  }
+  def queryParams[F[+_]: Sync](name: String): Directive[F, Nothing, Seq[String]] = query.map(_.multiParams.getOrElse(name, Nil))
+  def queryParam[F[+_]: Sync](name: String): Directive[F, Nothing, Option[String]] = query.map(_.params.get(name))
+  def queryParamOrElse[F[+_]: Sync, L](name: String, f: => F[L]): Directive[F, L, String] = queryParam(name).flatMap(
+    opt => Directive.getOrElse(opt, f)
+  )
+
+  def bodyAs[F[+_]: Sync, A](implicit dec: EntityDecoder[F, A]): Directive[F, Nothing, A] = Directive(req => req.as[A].map(Result.success(_)))
 }

@@ -2,7 +2,8 @@ package no.scalabin.http4s.directives
 
 import java.time.{LocalDateTime, ZoneOffset}
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, OptionT}
+import cats.effect.Sync
 import org.http4s._
 import org.http4s.headers._
 import org.http4s.parser.HttpHeaderParser
@@ -10,49 +11,39 @@ import org.http4s.util.CaseInsensitiveString
 
 import scala.language.higherKinds
 
+
 object Conditional {
-  def apply[F[+_]] = new Conditional[F] {}
-}
+  type ResponseDirective[F[+_]] = Directive[F, Response[F], Response[F]]
 
-trait Conditional[F[+_]] {
-  def ifModifiedSince(lm: LocalDateTime, orElse: => F[Response[F]])(implicit directives: Directives[F]): Directive[F, Response[F], Response[F]] = {
-    import directives._
-    import ops._
+  private object request extends RequestOps
 
+  def ifModifiedSince[F[+_]: Sync](lm: LocalDateTime, orElse: => F[Response[F]]): ResponseDirective[F] = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
-      mod <- `If-Modified-Since`.directive
-      res <- mod.filter(_.date == date).map(_ => F.delay(Response[F](Status.NotModified))).getOrElse(orElse).successValue
+      mod <- request.header(`If-Modified-Since`)
+      res <- OptionT.fromOption(mod).filter(_.date == date).cata(Directive.successF(orElse), _ => Directive.failure(Response[F](Status.NotModified)))
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
-  def ifUnmodifiedSince(lm: LocalDateTime, orElse: => F[Response[F]])(implicit directives: Directives[F]): Directive[F, Response[F], Response[F]] = {
-    import directives._
-    import ops._
-
+  def ifUnmodifiedSince[F[+_]: Sync](lm: LocalDateTime, orElse: => F[Response[F]]): ResponseDirective[F] = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
-      mod <- IfUnmodifiedSince.directive
-      res <- mod.filter(_.date == date).fold(F.delay(Response[F](Status.NotModified)))(_ => orElse).successValue
+      mod <- request.header(IfUnmodifiedSince)
+      res <- OptionT.fromOption(mod).filter(_.date == date).cata(Directive.failure(Response[F](Status.NotModified)), _ => Directive.successF(orElse))
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
-  def ifNoneMatch(tag: ETag.EntityTag, orElse: => F[Response[F]])(implicit directives: Directives[F]): Directive[F, Response[F], Response[F]] = {
-    import directives._
-    import ops._
+  def ifNoneMatch[F[+_]: Sync](tag: ETag.EntityTag, orElse: => F[Response[F]]): ResponseDirective[F] = {
     for {
-      mod <- `If-None-Match`.directive
-      res <- mod.filter(_.tags.exists(_.exists(a => a == tag))).map(_ => F.delay(Response[F](Status.NotModified))).getOrElse(orElse).successValue
+      mod <- request.header(`If-None-Match`)
+      res <- OptionT.fromOption(mod).filter(_.tags.exists(_.exists(a => a == tag))).cata(Directive.successF(orElse), _ => Directive.failure(Response[F](Status.NotModified)))
     } yield res.putHeaders(ETag(tag))
   }
 
-  def ifMatch(tag: ETag.EntityTag, orElse: => F[Response[F]])(implicit directives: Directives[F]): Directive[F, Response[F], Response[F]] = {
-    import directives._
-    import ops._
-
+  def ifMatch[F[+_]: Sync](tag: ETag.EntityTag, orElse: => F[Response[F]]): ResponseDirective[F] = {
     for {
-      mod <- IfMatch.directive
-      res <- mod.filter(_.tags.exists(_.exists(a => a == tag))).map(_ => orElse).getOrElse(F.delay(Response[F](Status.NotModified))).successValue
+      mod <- request.header(IfMatch)
+      res <- OptionT.fromOption(mod).filter(_.tags.exists(_.exists(a => a == tag))).cata(Directive.failure(Response[F](Status.NotModified)), _ => Directive.successF(orElse))
     } yield res.putHeaders(ETag(tag))
   }
 }

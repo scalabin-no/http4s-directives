@@ -15,7 +15,6 @@ object Main extends StreamApp[IO] {
 
   override def stream(args: List[String], requestShutdown: IO[Unit]) = {
     implicit val Direct: Directives[IO] = Directives[IO]
-    val conditional = Conditional[IO]
 
     import Direct._
           import ops._
@@ -29,7 +28,7 @@ object Main extends StreamApp[IO] {
         case Root / "hello" => {
           for {
             _ <- Method.GET
-            res <- conditional.ifModifiedSince(lm, Ok("Hello World"))
+            res <- Conditional.ifModifiedSince(lm, Ok("Hello World"))
             //res <- Ok("Hello world")
           } yield res
         }
