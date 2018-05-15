@@ -54,7 +54,7 @@ object IfMatch extends HeaderKey.Singleton {
 
   override val name: CaseInsensitiveString = CaseInsensitiveString("If-Match")
 
-  override def matchHeader(header: Header): Option[HeaderT] = if (header.name == name) parse(header.value).toOption else None
+  override def matchHeader(header: Header): Option[HeaderT] = if (header.name == name) parse(header.value).right.toOption else None
 
   /** Match any existing entity */
   val `*` = `If-None-Match`(None)
@@ -73,7 +73,7 @@ object IfUnmodifiedSince extends HeaderKey.Singleton {
 
   override def name: CaseInsensitiveString = CaseInsensitiveString("If-Unmodified-Since")
 
-  override def matchHeader(header: Header): Option[HeaderT] = if (header.name == name) parse(header.value).toOption else None
+  override def matchHeader(header: Header): Option[HeaderT] = if (header.name == name) parse(header.value).right.toOption else None
 
   override def parse(s: String): ParseResult[`If-Modified-Since`] =
     HttpHeaderParser.IF_MODIFIED_SINCE(s)
