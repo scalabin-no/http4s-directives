@@ -6,6 +6,7 @@ import fs2.StreamApp
 import org.http4s._
 import org.http4s.server.blaze._
 import org.http4s.client.blaze._
+import cats.syntax.flatMap._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds

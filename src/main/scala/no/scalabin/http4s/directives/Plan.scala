@@ -1,6 +1,6 @@
 package no.scalabin.http4s.directives
 
-import cats.effect.Sync
+import cats.MonadError
 import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -10,18 +10,18 @@ import scala.language.higherKinds
 
 
 object Plan {
-  def apply[F[+_]: Sync](): Plan[F] = Plan(PartialFunction.empty)
+  def apply[F[+_]]()(implicit M: MonadError[F, Throwable]): Plan[F] = Plan(PartialFunction.empty)
 }
 
-case class Plan[F[+_]: Sync](onFail: PartialFunction[Throwable, F[Response[F]]]) {
+case class Plan[F[+_]](onFail: PartialFunction[Throwable, F[Response[F]]])(implicit M: MonadError[F, Throwable]) {
   type Intent = PartialFunction[Request[F], F[Response[F]]]
 
   def task(pf: PartialFunction[Request[F], Directive[F, Response[F], Response[F]]]): Intent = {
     case req if pf.isDefinedAt(req) => pf(req).run(req).map(Result.merge).attempt.flatMap(
       _.fold({
         case t if onFail.isDefinedAt(t) => onFail(t)
-        case t => Sync[F].pure(Response(Status.InternalServerError))
-      }, Sync[F].pure)
+        case t => M.pure(Response(Status.InternalServerError))
+      }, M.pure)
     )
   }
 

@@ -1,20 +1,20 @@
 package no.scalabin.http4s
 package directives
 
-import cats.effect.Sync
+import cats.Monad
 import org.http4s._
 
 import scala.language.{higherKinds, implicitConversions}
 
 
 object Directives {
-  def apply[F[+_]](implicit M: Sync[F]):Directives[F] = new Directives[F]{
-    implicit val F: Sync[F] = M
+  def apply[F[+_]](implicit M: Monad[F]):Directives[F] = new Directives[F]{
+    implicit val F: Monad[F] = M
   }
 }
 
 trait Directives[F[+_]] {
-  implicit val F: Sync[F]
+  implicit val F: Monad[F]
 
   type Result[+L, +R] = directives.Result[L, R]
   val Result          = directives.Result

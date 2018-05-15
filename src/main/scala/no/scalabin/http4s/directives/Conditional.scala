@@ -2,8 +2,8 @@ package no.scalabin.http4s.directives
 
 import java.time.{LocalDateTime, ZoneOffset}
 
+import cats.Monad
 import cats.data.{NonEmptyList, OptionT}
-import cats.effect.Sync
 import org.http4s._
 import org.http4s.headers._
 import org.http4s.parser.HttpHeaderParser
@@ -17,7 +17,7 @@ object Conditional {
 
   private object request extends RequestOps
 
-  def ifModifiedSince[F[+_]: Sync](lm: LocalDateTime, orElse: => F[Response[F]]): ResponseDirective[F] = {
+  def ifModifiedSince[F[+_]: Monad](lm: LocalDateTime, orElse: => F[Response[F]]): ResponseDirective[F] = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
       mod <- request.header(`If-Modified-Since`)
@@ -25,7 +25,7 @@ object Conditional {
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
-  def ifUnmodifiedSince[F[+_]: Sync](lm: LocalDateTime, orElse: => F[Response[F]]): ResponseDirective[F] = {
+  def ifUnmodifiedSince[F[+_]: Monad](lm: LocalDateTime, orElse: => F[Response[F]]): ResponseDirective[F] = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
       mod <- request.header(IfUnmodifiedSince)
@@ -33,14 +33,14 @@ object Conditional {
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
-  def ifNoneMatch[F[+_]: Sync](tag: ETag.EntityTag, orElse: => F[Response[F]]): ResponseDirective[F] = {
+  def ifNoneMatch[F[+_]: Monad](tag: ETag.EntityTag, orElse: => F[Response[F]]): ResponseDirective[F] = {
     for {
       mod <- request.header(`If-None-Match`)
       res <- OptionT.fromOption(mod).filter(_.tags.exists(_.exists(a => a == tag))).cata(Directive.successF(orElse), _ => Directive.failure(Response[F](Status.NotModified)))
     } yield res.putHeaders(ETag(tag))
   }
 
-  def ifMatch[F[+_]: Sync](tag: ETag.EntityTag, orElse: => F[Response[F]]): ResponseDirective[F] = {
+  def ifMatch[F[+_]: Monad](tag: ETag.EntityTag, orElse: => F[Response[F]]): ResponseDirective[F] = {
     for {
       mod <- request.header(IfMatch)
       res <- OptionT.fromOption(mod).filter(_.tags.exists(_.exists(a => a == tag))).cata(Directive.failure(Response[F](Status.NotModified)), _ => Directive.successF(orElse))
