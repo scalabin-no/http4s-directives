@@ -1,11 +1,14 @@
-overridePublishBothSettings
+disablePlugins(aether.AetherPlugin)
+enablePlugins(aether.SignedAetherPlugin)
+
 overridePublishSignedSettings
+overridePublishLocalSettings
 
 publishTo := {
   if (isSnapshot.value) {
     Some(Opts.resolver.sonatypeSnapshots)
   } else {
-    Some(Opts.resolver.sonatypeReleases)
+    Some(Opts.resolver.sonatypeStaging)
   }
 }
 
