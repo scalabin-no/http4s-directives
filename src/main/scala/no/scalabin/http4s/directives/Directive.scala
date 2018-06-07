@@ -57,14 +57,16 @@ object Directive {
 
   def result[F[+ _] : Monad, L, R](result: => Result[L, R]): Directive[F, L, R] = Directive[F, L, R](_ => Monad[F].pure(result))
 
-  def success[F[+ _] : Monad, R](success: => R): Directive[F, Nothing, R] = result[F, Nothing, R](Result.success(success))
+  def success[F[+ _] : Monad, R](success: => R): Directive[F, Nothing, R] = pure(success)
 
   def failure[F[+ _] : Monad, L](failure: => L): Directive[F, L, Nothing] = result[F, L, Nothing](Result.failure(failure))
 
   def error[F[+ _] : Monad, L](error: => L): Directive[F, L, Nothing] = result[F, L, Nothing](Result.error(error))
 
 
-  def successF[F[+ _] : Monad, X](f: F[X]): Directive[F, Nothing, X] = Directive[F, Nothing, X](_ => f.map(Result.Success(_)))
+  def liftF[F[+ _] : Monad, X](f: F[X]): Directive[F, Nothing, X] = Directive[F, Nothing, X](_ => f.map(Result.Success(_)))
+
+  def successF[F[+ _] : Monad, X](f: F[X]): Directive[F, Nothing, X] = liftF(f)
   def failureF[F[+ _] : Monad, X](f: F[X]): Directive[F, X, Nothing] = Directive[F, X, Nothing](_ => f.map(Result.Failure(_)))
   def errorF[F[+ _] : Monad, X](f: F[X]): Directive[F, X, Nothing] = Directive[F, X, Nothing](_ => f.map(Result.Error(_)))
 
