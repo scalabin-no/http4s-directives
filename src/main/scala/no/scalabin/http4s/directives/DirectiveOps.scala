@@ -10,8 +10,16 @@ trait DirectiveOps[F[+_]] {
   }
 
   implicit class MonadDecorator[+X](f: F[X])(implicit sync: Monad[F]) {
-    def successValue: Directive[F, Nothing, X] = Directive.successF(f)
-    def failureValue: Directive[F, X, Nothing] = Directive.failureF(f)
-    def errorValue: Directive[F, X, Nothing] = Directive.errorF(f)
+
+    def successF: Directive[F, Nothing, X] = Directive.successF(f)
+    def failureF: Directive[F, X, Nothing] = Directive.failureF(f)
+    def errorF: Directive[F, X, Nothing] = Directive.errorF(f)
+
+    @deprecated("use successF instead", "0.3.0")
+    def successValue: Directive[F, Nothing, X] = successF
+    @deprecated("use failureF instead", "0.3.0")
+    def failureValue: Directive[F, X, Nothing] = failureF
+    @deprecated("use errorF instead", "0.3.0")
+    def errorValue: Directive[F, X, Nothing] = errorF
   }
 }

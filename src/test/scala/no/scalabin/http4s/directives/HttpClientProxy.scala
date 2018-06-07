@@ -43,7 +43,7 @@ object HttpClientProxy extends StreamApp[IO] {
     import ops._
     for {
       _ <- Method.GET
-      res <- fRes.successValue
+      res <- fRes.successF
     } yield { res }
   }
 
