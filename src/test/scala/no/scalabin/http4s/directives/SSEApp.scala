@@ -21,7 +21,7 @@ object SSEApp extends StreamApp[IO] {
       pathMapping {
         case _ => for {
           _ <- Method.GET
-          res <- Ok(events.map(e => ServerSentEvent(e.toString))).successValue
+          res <- Ok(events.map(e => ServerSentEvent(e.toString))).successF
         } yield {
           res
         }

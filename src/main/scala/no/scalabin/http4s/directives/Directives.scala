@@ -54,7 +54,7 @@ trait Directives[F[+_]] {
   object ops extends DirectiveOps[F] with RequestDirectives[F]
 
   object implicits {
-    implicit def wrapSuccess[S](f: F[S]): directives.Directive[F, Nothing, S] = ops.MonadDecorator(f).successValue
+    implicit def wrapSuccess[S](f: F[S]): directives.Directive[F, Nothing, S] = ops.MonadDecorator(f).successF
   }
 }
 
