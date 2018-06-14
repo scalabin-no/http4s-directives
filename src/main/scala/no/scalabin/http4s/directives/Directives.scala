@@ -8,13 +8,10 @@ import scala.language.{higherKinds, implicitConversions}
 
 
 object Directives {
-  def apply[F[+_]](implicit M: Monad[F]):Directives[F] = new Directives[F]{
-    implicit val F: Monad[F] = M
-  }
+  def apply[F[+_]](implicit M: Monad[F]):Directives[F] = new Directives[F]
 }
 
-trait Directives[F[+_]] {
-  implicit val F: Monad[F]
+class Directives[F[+_]: Monad] {
 
   type Result[+L, +R] = directives.Result[L, R]
   val Result          = directives.Result
