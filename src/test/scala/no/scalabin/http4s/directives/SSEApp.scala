@@ -1,6 +1,5 @@
 package no.scalabin.http4s.directives
 
-
 import cats.effect.IO
 import fs2._
 import org.http4s._
@@ -19,12 +18,13 @@ object SSEApp extends StreamApp[IO] {
 
     val service = HttpService[IO] {
       pathMapping {
-        case _ => for {
-          _ <- Method.GET
-          res <- Ok(events.map(e => ServerSentEvent(e.toString))).successF
-        } yield {
-          res
-        }
+        case _ =>
+          for {
+            _   <- Method.GET
+            res <- Ok(events.map(e => ServerSentEvent(e.toString))).successF
+          } yield {
+            res
+          }
       }
     }
 
@@ -35,7 +35,6 @@ object SSEApp extends StreamApp[IO] {
     val seconds = Scheduler[IO](2).flatMap(_.awakeEvery[IO](1.second))
     seconds.take(10).map(_ => Event("event"))
   }
-
 
   case class Event(name: String)
 }

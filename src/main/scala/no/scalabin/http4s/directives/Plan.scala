@@ -8,21 +8,25 @@ import org.http4s._
 
 import scala.language.higherKinds
 
-
 object Plan {
-  def apply[F[+_]]()(implicit M: MonadError[F, Throwable]): Plan[F] = Plan(PartialFunction.empty)
+  def apply[F[+ _]]()(implicit M: MonadError[F, Throwable]): Plan[F] = Plan(PartialFunction.empty)
 }
 
-case class Plan[F[+_]](onFail: PartialFunction[Throwable, F[Response[F]]])(implicit M: MonadError[F, Throwable]) {
+case class Plan[F[+ _]](onFail: PartialFunction[Throwable, F[Response[F]]])(implicit M: MonadError[F, Throwable]) {
   type Intent = PartialFunction[Request[F], F[Response[F]]]
 
   def task(pf: PartialFunction[Request[F], Directive[F, Response[F], Response[F]]]): Intent = {
-    case req if pf.isDefinedAt(req) => pf(req).run(req).map(Result.merge).attempt.flatMap(
-      _.fold({
-        case t if onFail.isDefinedAt(t) => onFail(t)
-        case t => M.pure(Response(Status.InternalServerError))
-      }, M.pure)
-    )
+    case req if pf.isDefinedAt(req) =>
+      pf(req)
+        .run(req)
+        .map(Result.merge)
+        .attempt
+        .flatMap(
+          _.fold({
+            case t if onFail.isDefinedAt(t) => onFail(t)
+            case t                          => M.pure(Response(Status.InternalServerError))
+          }, M.pure)
+        )
   }
 
   case class Mapping[X](from: Request[F] => X) {
@@ -31,6 +35,5 @@ case class Plan[F[+_]](onFail: PartialFunction[Throwable, F[Response[F]]])(impli
     }
   }
 
-  lazy val PathMapping : Mapping[Uri.Path] = Mapping[Uri.Path](r => r.uri.path)
+  lazy val PathMapping: Mapping[Uri.Path] = Mapping[Uri.Path](r => r.uri.path)
 }
-

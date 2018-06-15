@@ -22,7 +22,7 @@ object HttpClientProxy extends StreamApp[IO] {
     val service = HttpService[IO] {
       pathMapping {
         case "/flatMap" => directiveflatMap(getExample())
-        case "/" => directiveFor(getExample())
+        case "/"        => directiveFor(getExample())
       }
     }
 
@@ -33,18 +33,18 @@ object HttpClientProxy extends StreamApp[IO] {
     httpClient.get("https://example.org/")(r => IO(r))
   }
 
-  type ValueDirective[F[+_], A] = Directive[F, Response[F], A]
-  type ResponseDirective[F[+_]] = ValueDirective[F, Response[F]]
+  type ValueDirective[F[+ _], A] = Directive[F, Response[F], A]
+  type ResponseDirective[F[+ _]] = ValueDirective[F, Response[F]]
 
-  def directiveFor[F[+_]: Monad](fRes: F[Response[F]])(implicit d: Directives[F]): ResponseDirective[F] = {
+  def directiveFor[F[+ _]: Monad](fRes: F[Response[F]])(implicit d: Directives[F]): ResponseDirective[F] = {
     import d.ops._
     for {
-      _ <- Method.GET
+      _   <- Method.GET
       res <- fRes.successF
     } yield { res }
   }
 
-  def directiveflatMap[F[+_]: Monad](res: F[Response[F]])(implicit d: Directives[F]): ResponseDirective[F] = {
+  def directiveflatMap[F[+ _]: Monad](res: F[Response[F]])(implicit d: Directives[F]): ResponseDirective[F] = {
     import d.ops._
 
     Method.GET.flatMap(_ => res.successF)
