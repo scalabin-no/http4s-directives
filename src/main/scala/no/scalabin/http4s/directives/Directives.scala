@@ -28,7 +28,8 @@ class Directives[F[+_]: Monad] {
   def failure[L](failure: L) = directives.Directive.failure[F, L](failure)
   def error[L](error: L)     = directives.Directive.error[F, L](error)
 
-  def successF[R](success: F[R]) = directives.Directive.successF[F, R](success)
+  def liftF[R](success: F[R]) = directives.Directive.liftF[F, R](success)
+  def successF[R](success: F[R]) = liftF(success)
   def failureF[L](failure: F[L]) = directives.Directive.failureF[F, L](failure)
   def errorF[L](error: F[L])     = directives.Directive.errorF[F, L](error)
 
