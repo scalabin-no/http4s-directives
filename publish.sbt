@@ -12,25 +12,26 @@ publishTo := {
   }
 }
 
-
-pomIncludeRepository := { x => false }
+pomIncludeRepository := { x =>
+  false
+}
 
 packageOptions += {
-  val title = name.value
-  val ver = version.value
+  val title  = name.value
+  val ver    = version.value
   val vendor = organization.value
 
   Package.ManifestAttributes(
-    "Created-By" -> "Scala Build Tool",
-    "Built-By" -> System.getProperty("user.name"),
-    "Build-Jdk" -> System.getProperty("java.version"),
-    "Specification-Title" -> title,
-    "Specification-Version" -> ver,
-    "Specification-Vendor" -> vendor,
-    "Implementation-Title" -> title,
-    "Implementation-Version" -> ver,
+    "Created-By"               -> "Scala Build Tool",
+    "Built-By"                 -> System.getProperty("user.name"),
+    "Build-Jdk"                -> System.getProperty("java.version"),
+    "Specification-Title"      -> title,
+    "Specification-Version"    -> ver,
+    "Specification-Vendor"     -> vendor,
+    "Implementation-Title"     -> title,
+    "Implementation-Version"   -> ver,
     "Implementation-Vendor-Id" -> vendor,
-    "Implementation-Vendor" -> vendor
+    "Implementation-Vendor"    -> vendor
   )
 }
 
@@ -50,17 +51,20 @@ publishMavenStyle := true
 
 publishArtifact in Test := false
 
-pomIncludeRepository := { _ => false }
+pomIncludeRepository := { _ =>
+  false
+}
 
 releaseCrossBuild := true
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
-scmInfo := Some(ScmInfo(
-  new URL("https://github.com/scalabin-no/http4s-directives"),
-  "scm:git:git@github.com:scalabin-no/http4s-directives.git",
-  Some("scm:git:git@github.com:scalabin-no/http4s-directives.git")
-))
+scmInfo := Some(
+  ScmInfo(
+    new URL("https://github.com/scalabin-no/http4s-directives"),
+    "scm:git:git@github.com:scalabin-no/http4s-directives.git",
+    Some("scm:git:git@github.com:scalabin-no/http4s-directives.git")
+  ))
 
 developers ++= List(
   Developer(
