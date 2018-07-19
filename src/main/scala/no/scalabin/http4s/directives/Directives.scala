@@ -37,7 +37,7 @@ class Directives[F[+ _]: Monad] {
 
   def getOrElse[A, L](opt: Option[A], orElse: => F[L]) = directives.Directive.getOrElse[F, L, A](opt, orElse)
 
-  type Filter[+L] = directives.Directive.Filter[L]
+  type Filter[+L] = directives.Directive.Filter[F, L]
   val Filter = directives.Directive.Filter
 
   val commit = directives.Directive.commit

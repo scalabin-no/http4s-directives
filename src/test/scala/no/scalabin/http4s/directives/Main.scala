@@ -29,6 +29,8 @@ object Main extends StreamApp[IO] {
           for {
             _   <- Method.GET
             res <- Conditional.ifModifiedSince(lm, Ok("Hello World"))
+            foo <- request.queryParam[IO]("foo")
+            if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
             //res <- Ok("Hello world")
           } yield res
         }
