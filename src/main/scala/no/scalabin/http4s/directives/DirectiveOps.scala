@@ -6,7 +6,7 @@ import scala.language.higherKinds
 
 trait DirectiveOps[F[+ _]] {
   implicit class FilterSyntax(b: Boolean) {
-    def |[L](failure: => L) = Directive.Filter(b, () => failure)
+    def orF[L](failureF: F[L]) = Directive.Filter(b, failureF)
   }
 
   implicit class MonadDecorator[+X](f: F[X])(implicit sync: Monad[F]) {
