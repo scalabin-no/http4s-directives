@@ -23,13 +23,13 @@ class Directives[F[_]: Monad] {
 
   def result[R](result: Result[R]) = directives.Directive.result[F, R](result)
 
-  def pure[R](success: R)    = directives.Directive.pure[F, R](success)
-  def success[R](success: R) = pure(success)
+  def pure[R](success: R)              = directives.Directive.pure[F, R](success)
+  def success[R](success: R)           = pure(success)
   def failure[R](failure: Response[F]) = directives.Directive.failure[F, R](failure)
   def error[R](error: Response[F])     = directives.Directive.error[F, R](error)
 
-  def liftF[R](success: F[R])    = directives.Directive.liftF[F, R](success)
-  def successF[R](success: F[R]) = liftF(success)
+  def liftF[R](success: F[R])           = directives.Directive.liftF[F, R](success)
+  def successF[R](success: F[R])        = liftF(success)
   def failureF(failure: F[Response[F]]) = directives.Directive.failureF[F, Response[F]](failure)
   def errorF(error: F[Response[F]])     = directives.Directive.errorF[F, Response[F]](error)
 

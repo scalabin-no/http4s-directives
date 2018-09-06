@@ -20,8 +20,10 @@ object Conditional {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
       mod <- request.header(`If-Modified-Since`)
-      res <- mod.filter(_.date == date)
-            .fold(Directive.successF[F, Response[F]](orElse))(_ => Directive.failure[F, Response[F]](Response[F](Status.NotModified)))
+      res <- mod
+              .filter(_.date == date)
+              .fold(Directive.successF[F, Response[F]](orElse))(_ =>
+                Directive.failure[F, Response[F]](Response[F](Status.NotModified)))
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
@@ -29,24 +31,29 @@ object Conditional {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
       mod <- request.header(IfUnmodifiedSince)
-      res <- mod.filter(_.date == date)
-        .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => Directive.successF[F, Response[F]](orElse))
+      res <- mod
+              .filter(_.date == date)
+              .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ =>
+                Directive.successF[F, Response[F]](orElse))
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
   def ifNoneMatch[F[_]: Monad](tag: ETag.EntityTag, orElse: => F[Response[F]]): ResponseDirective[F] = {
     for {
       mod <- request.header(`If-None-Match`)
-      res <- mod.filter(_.tags.exists(t => t.exists(_ == tag)))
-        .fold(Directive.successF(orElse))(_ => Directive.failure(Response[F](Status.NotModified)))
+      res <- mod
+              .filter(_.tags.exists(t => t.exists(_ == tag)))
+              .fold(Directive.successF(orElse))(_ => Directive.failure(Response[F](Status.NotModified)))
     } yield res.putHeaders(ETag(tag))
   }
 
   def ifMatch[F[_]: Monad](tag: ETag.EntityTag, orElse: => F[Response[F]]): ResponseDirective[F] = {
     for {
       mod <- request.header(IfMatch)
-      res <- mod.filter(_.tags.exists(t => t.exists(_ == tag)))
-        .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => Directive.successF[F, Response[F]](orElse))
+      res <- mod
+              .filter(_.tags.exists(t => t.exists(_ == tag)))
+              .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ =>
+                Directive.successF[F, Response[F]](orElse))
     } yield res.putHeaders(ETag(tag))
   }
 }

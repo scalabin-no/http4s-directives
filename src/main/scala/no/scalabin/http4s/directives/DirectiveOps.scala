@@ -12,7 +12,7 @@ trait DirectiveOps[F[_]] {
 
   implicit class MonadDecorator[X](f: F[X])(implicit sync: Monad[F]) {
 
-    def successF: Directive[F, X] = Directive.successF(f)
+    def successF: Directive[F, X]                                          = Directive.successF(f)
     def failureF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C] = Directive.failureF(ev(f))
     def errorF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C]   = Directive.errorF(ev(f))
   }

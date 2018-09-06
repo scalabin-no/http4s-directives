@@ -13,7 +13,7 @@ object Result {
     case Error(value)   => value
   }
 
-  def success[F[_], A](a: A): Result[F, A] = Success(a)
+  def success[F[_], A](a: A): Result[F, A]           = Success(a)
   def failure[F[_], A](a: Response[F]): Result[F, A] = Failure(a)
   def error[F[_], A](a: Response[F]): Result[F, A]   = Error(a)
 
