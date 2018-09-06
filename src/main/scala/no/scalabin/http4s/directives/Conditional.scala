@@ -21,7 +21,7 @@ object Conditional {
     for {
       mod <- request.header(`If-Modified-Since`)
       res <- mod.filter(_.date == date)
-            .fold(Directive.successF[F, Response[F]](orElse))(_ => Directive.failure[F](Response[F](Status.NotModified)))
+            .fold(Directive.successF[F, Response[F]](orElse))(_ => Directive.failure[F, Response[F]](Response[F](Status.NotModified)))
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
@@ -30,7 +30,7 @@ object Conditional {
     for {
       mod <- request.header(IfUnmodifiedSince)
       res <- mod.filter(_.date == date)
-        .fold(Directive.failure[F](Response[F](Status.NotModified)))(_ => Directive.successF[F, Response[F]](orElse))
+        .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => Directive.successF[F, Response[F]](orElse))
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
@@ -46,7 +46,7 @@ object Conditional {
     for {
       mod <- request.header(IfMatch)
       res <- mod.filter(_.tags.exists(t => t.exists(_ == tag)))
-        .fold(Directive.failure[F](Response[F](Status.NotModified)))(_ => Directive.successF[F, Response[F]](orElse))
+        .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => Directive.successF[F, Response[F]](orElse))
     } yield res.putHeaders(ETag(tag))
   }
 }
