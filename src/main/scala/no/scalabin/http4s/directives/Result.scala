@@ -3,16 +3,9 @@ package no.scalabin.http4s.directives
 import cats.{Applicative, Eval, Monad, Traverse}
 import org.http4s.Response
 
-import scala.language.higherKinds
+import scala.language.{higherKinds, reflectiveCalls}
 
 object Result {
-
-  def merge[F[_]](result: Result[F, Response[F]]): Response[F] = result match {
-    case Success(value) => value
-    case Failure(value) => value
-    case Error(value)   => value
-  }
-
   def success[F[_], A](a: A): Result[F, A]           = Success(a)
   def failure[F[_], A](a: Response[F]): Result[F, A] = Failure(a)
   def error[F[_], A](a: Response[F]): Result[F, A]   = Error(a)
@@ -27,9 +20,9 @@ object Result {
 
     override def pure[A](x: A): Result[F, A] = Success(x)
 
-    override def flatMap[A, B](fa: Result[F, A])(f: (A) => Result[F, B]): Result[F, B] = fa flatMap f
+    override def flatMap[A, B](fa: Result[F, A])(f: A => Result[F, B]): Result[F, B] = fa flatMap f
 
-    override def tailRecM[A, B](a: A)(f: (A) => Result[F, Either[A, B]]): Result[F, B] = {
+    override def tailRecM[A, B](a: A)(f: A => Result[F, Either[A, B]]): Result[F, B] = {
       f(a) match {
         case Success(Left(v))  => tailRecM(v)(f)
         case Success(Right(v)) => Success(v)
@@ -40,7 +33,7 @@ object Result {
   }
 
   implicit def traverse[F[_]] = new Traverse[({ type X[A] = Result[F, A] })#X] {
-    override def traverse[G[_], A, B](fa: Result[F, A])(f: (A) => G[B])(implicit G: Applicative[G]) =
+    override def traverse[G[_], A, B](fa: Result[F, A])(f: A => G[B])(implicit G: Applicative[G]) =
       fa match {
         case Result.Success(value) => G.map(f(value))(Result.Success(_))
         case Result.Failure(value) => G.pure(Result.Failure(value))
@@ -73,4 +66,10 @@ sealed trait Result[F[_], A] extends Product with Serializable {
   }
 
   def map[B](f: A => B): Result[F, B] = flatMap(r => Result.Success[F, B](f(r)))
+
+  def response(implicit ev: A =:= Response[F]): Response[F] = this match {
+    case Result.Success(response) => response
+    case Result.Failure(response) => response
+    case Result.Error(response)   => response
+  }
 }

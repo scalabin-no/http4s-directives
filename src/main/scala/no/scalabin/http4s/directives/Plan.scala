@@ -19,7 +19,7 @@ case class Plan[F[_]](onFail: PartialFunction[Throwable, F[Response[F]]])(implic
     case req if pf.isDefinedAt(req) =>
       pf(req)
         .run(req)
-        .map(Result.merge)
+        .map(_.response)
         .attempt
         .flatMap(
           _.fold({
