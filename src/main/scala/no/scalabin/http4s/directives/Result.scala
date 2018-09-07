@@ -59,18 +59,18 @@ object Result {
   }
 }
 
-sealed trait Result[F[_], R] extends Product with Serializable {
-  def flatMap[B](f: R => Result[F, B]): Result[F, B] = this match {
+sealed trait Result[F[_], A] extends Product with Serializable {
+  def flatMap[B](f: A => Result[F, B]): Result[F, B] = this match {
     case Result.Success(value) => f(value)
     case Result.Failure(value) => Result.Failure(value)
     case Result.Error(value)   => Result.Error(value)
   }
 
-  def orElse(next: Result[F, R]): Result[F, R] = this match {
+  def orElse(next: Result[F, A]): Result[F, A] = this match {
     case Result.Success(value) => Result.Success(value)
     case Result.Failure(_)     => next
     case Result.Error(value)   => Result.Error(value)
   }
 
-  def map[B](f: R => B): Result[F, B] = flatMap(r => Result.Success[F, B](f(r)))
+  def map[B](f: A => B): Result[F, B] = flatMap(r => Result.Success[F, B](f(r)))
 }

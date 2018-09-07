@@ -8,8 +8,8 @@ import org.http4s._
 
 import scala.language.{higherKinds, reflectiveCalls}
 
-case class Directive[F[_]: Monad, R](run: Request[F] => F[Result[F, R]]) {
-  def flatMap[B](f: R => Directive[F, B]): Directive[F, B] =
+case class Directive[F[_]: Monad, A](run: Request[F] => F[Result[F, A]]) {
+  def flatMap[B](f: A => Directive[F, B]): Directive[F, B] =
     Directive[F, B](req =>
       run(req).flatMap {
         case Result.Success(value) => f(value).run(req)
@@ -17,28 +17,28 @@ case class Directive[F[_]: Monad, R](run: Request[F] => F[Result[F, R]]) {
         case Result.Error(value)   => Monad[F].pure(Result.error(value))
     })
 
-  def map[B](f: R => B): Directive[F, B] = Directive[F, B](req => run(req).map(_.map(f)))
+  def map[B](f: A => B): Directive[F, B] = Directive[F, B](req => run(req).map(_.map(f)))
 
-  def filter(f: R => Directive.Filter[F]): Directive[F, R] =
+  def filter(f: A => Directive.Filter[F]): Directive[F, A] =
     flatMap { r =>
       val result = f(r)
       if (result.result)
-        Directive.success[F, R](r)
+        Directive.success[F, A](r)
       else
-        Directive.failureF[F, R](result.failure)
+        Directive.failureF[F, A](result.failure)
     }
 
-  def withFilter(f: R => Directive.Filter[F]): Directive[F, R] = filter(f)
+  def withFilter(f: A => Directive.Filter[F]): Directive[F, A] = filter(f)
 
-  def orElse(next: Directive[F, R]): Directive[F, R] =
-    Directive[F, R](req =>
+  def orElse(next: Directive[F, A]): Directive[F, A] =
+    Directive[F, A](req =>
       run(req).flatMap {
         case Result.Success(value) => Monad[F].pure(Result.success(value))
         case Result.Failure(_)     => next.run(req)
         case Result.Error(value)   => Monad[F].pure(Result.error(value))
     })
 
-  def |(next: Directive[F, R]): Directive[F, R] = orElse(next)
+  def |(next: Directive[F, A]): Directive[F, A] = orElse(next)
 
 }
 
@@ -58,13 +58,13 @@ object Directive {
 
   def pure[F[_]: Monad, A](a: => A): Directive[F, A] = monad[F].pure(a)
 
-  def result[F[_]: Monad, R](result: => Result[F, R]): Directive[F, R] = Directive[F, R](_ => Monad[F].pure(result))
+  def result[F[_]: Monad, A](result: => Result[F, A]): Directive[F, A] = Directive[F, A](_ => Monad[F].pure(result))
 
-  def success[F[_]: Monad, R](success: => R): Directive[F, R] = pure(success)
+  def success[F[_]: Monad, A](success: => A): Directive[F, A] = pure(success)
 
-  def failure[F[_]: Monad, R](failure: => Response[F]): Directive[F, R] = result[F, R](Result.failure[F, R](failure))
+  def failure[F[_]: Monad, A](failure: => Response[F]): Directive[F, A] = result[F, A](Result.failure[F, A](failure))
 
-  def error[F[_]: Monad, R](error: => Response[F]): Directive[F, R] = result[F, R](Result.error[F, R](error))
+  def error[F[_]: Monad, A](error: => Response[F]): Directive[F, A] = result[F, A](Result.error[F, A](error))
 
   def liftF[F[_]: Monad, X](f: F[X]): Directive[F, X] = Directive[F, X](_ => f.map(Result.Success(_)))
 
@@ -88,8 +88,8 @@ object Directive {
     }
   }
 
-  def getOrElseF[F[_]: Monad, R](opt: F[Option[R]], orElse: => F[Response[F]]): Directive[F, R] =
-    Directive(_ => OptionT(opt).cata(orElse.map(Result.failure[F, R]), v => Monad[F].pure(Result.success[F, R](v))).flatten)
+  def getOrElseF[F[_]: Monad, A](opt: F[Option[A]], orElse: => F[Response[F]]): Directive[F, A] =
+    Directive(_ => OptionT(opt).cata(orElse.map(Result.failure[F, A]), v => Monad[F].pure(Result.success[F, A](v))).flatten)
 
   def getOrElse[F[_]: Monad, A](opt: Option[A], orElse: => F[Response[F]]): Directive[F, A] = opt match {
     case Some(r) => success(r)

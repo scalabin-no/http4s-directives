@@ -12,39 +12,39 @@ object Directives {
 
 class Directives[F[_]: Monad] {
 
-  type Result[R] = directives.Result[F, R]
+  type Result[A] = directives.Result[F, A]
   val Result = directives.Result
 
-  type Directive[R] = directives.Directive[F, R]
+  type Directive[A] = directives.Directive[F, A]
 
   object Directive {
-    def apply[R](run: Request[F] => F[Result[R]]): Directive[R] = directives.Directive[F, R](run)
+    def apply[A](run: Request[F] => F[Result[A]]): Directive[A] = directives.Directive(run)
   }
 
-  def result[R](result: Result[R]) = directives.Directive.result[F, R](result)
+  def result[A](result: Result[A]) = directives.Directive.result(result)
 
-  def pure[R](success: R)              = directives.Directive.pure[F, R](success)
-  def success[R](success: R)           = pure(success)
-  def failure[R](failure: Response[F]) = directives.Directive.failure[F, R](failure)
-  def error[R](error: Response[F])     = directives.Directive.error[F, R](error)
+  def pure[A](success: A)              = directives.Directive.pure(success)
+  def success[A](success: A)           = pure(success)
+  def failure[A](failure: Response[F]) = directives.Directive.failure[F, A](failure)
+  def error[A](error: Response[F])     = directives.Directive.error[F, A](error)
 
-  def liftF[R](success: F[R])           = directives.Directive.liftF[F, R](success)
-  def successF[R](success: F[R])        = liftF(success)
+  def liftF[A](success: F[A])           = directives.Directive.liftF[F, A](success)
+  def successF[A](success: F[A])        = liftF(success)
   def failureF(failure: F[Response[F]]) = directives.Directive.failureF[F, Response[F]](failure)
   def errorF(error: F[Response[F]])     = directives.Directive.errorF[F, Response[F]](error)
 
-  def getOrElseF[R](opt: F[Option[R]], orElse: => F[Response[F]]) = directives.Directive.getOrElseF[F, R](opt, orElse)
+  def getOrElseF[A](opt: F[Option[A]], orElse: => F[Response[F]]) = directives.Directive.getOrElseF(opt, orElse)
 
-  def getOrElse[A](opt: Option[A], orElse: => F[Response[F]]) = directives.Directive.getOrElse[F, A](opt, orElse)
+  def getOrElse[A](opt: Option[A], orElse: => F[Response[F]]) = directives.Directive.getOrElse(opt, orElse)
 
   type Filter = directives.Directive.Filter[F]
   val Filter = directives.Directive.Filter
 
   val commit = directives.Directive.commit
 
-  def value[R](f: F[Result[R]]) = Directive[R](_ => f)
+  def value[A](f: F[Result[A]]) = Directive[A](_ => f)
 
-  implicit def DirectiveMonad[L] = directives.Directive.monad[F]
+  implicit def DirectiveMonad = directives.Directive.monad[F]
 
   type when[A] = directives.when[F, A]
   val when = directives.when
