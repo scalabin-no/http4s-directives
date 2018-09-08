@@ -1,6 +1,7 @@
 package no.scalabin.http4s.directives
 
 import cats.effect._
+import cats.implicits._
 import fs2._
 import org.http4s._
 import org.http4s.dsl.io._
@@ -28,7 +29,7 @@ object SSEApp extends IOApp {
       }
     }
 
-    BlazeBuilder[IO].bindLocal(8080).mountService(service, "/").serve.compile.drain.map(_ => ExitCode.Success)
+    BlazeBuilder[IO].bindLocal(8080).mountService(service, "/").serve.compile.drain.as(ExitCode.Success)
   }
 
   def events: Stream[IO, Event] = {

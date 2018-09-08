@@ -3,10 +3,11 @@ package directives
 
 import cats.Monad
 import cats.effect._
+import cats.implicits._
 import org.http4s._
 import org.http4s.client.Client
-import org.http4s.server.blaze._
 import org.http4s.client.blaze._
+import org.http4s.server.blaze._
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
@@ -26,7 +27,7 @@ object HttpClientProxy extends IOApp {
       }
     }
 
-    BlazeBuilder[IO].bindLocal(8080).mountService(service, "/").serve.compile.drain.map(_ => ExitCode.Success)
+    BlazeBuilder[IO].bindLocal(8080).mountService(service, "/").serve.compile.drain.as(ExitCode.Success)
   }
 
   def getExample(clientResource: Resource[IO, Client[IO]]): IO[Response[IO]] = {
