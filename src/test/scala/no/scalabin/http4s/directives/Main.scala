@@ -3,6 +3,7 @@ package no.scalabin.http4s.directives
 import java.time.LocalDateTime
 
 import cats.effect._
+import cats.implicits._
 import org.http4s._
 import org.http4s.dsl.impl.Root
 import org.http4s.dsl.io._
@@ -34,6 +35,6 @@ object Main extends IOApp {
       }
     }
 
-    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(service, "/").serve.compile.drain.map(_ => ExitCode.Success)
+    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(service, "/").serve.compile.drain.as(ExitCode.Success)
   }
 }
