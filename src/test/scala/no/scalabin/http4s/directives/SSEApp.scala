@@ -1,22 +1,22 @@
 package no.scalabin.http4s.directives
 
-import cats.effect.IO
+import cats.effect._
 import fs2._
 import org.http4s._
-import org.http4s.server.blaze._
 import org.http4s.dsl.io._
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.http4s.server.blaze._
 
-object SSEApp extends StreamApp[IO] {
-  override def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, StreamApp.ExitCode] = {
+import scala.concurrent.duration._
+
+object SSEApp extends IOApp {
+  override def run(args: List[String]): IO[ExitCode] = {
     val directives = Directives[IO]
     import directives._
     import ops._
 
     val pathMapping = Plan[IO].PathMapping
 
-    val service = HttpService[IO] {
+    val service = HttpRoutes.of {
       pathMapping {
         case _ =>
           for {
@@ -28,11 +28,11 @@ object SSEApp extends StreamApp[IO] {
       }
     }
 
-    BlazeBuilder[IO].bindLocal(8080).mountService(service).serve
+    BlazeBuilder[IO].bindLocal(8080).mountService(service, "/").serve.compile.drain.map(_ => ExitCode.Success)
   }
 
   def events: Stream[IO, Event] = {
-    val seconds = Scheduler[IO](2).flatMap(_.awakeEvery[IO](1.second))
+    val seconds = Stream.awakeEvery[IO](1.second)
     seconds.take(10).map(_ => Event("event"))
   }
 
