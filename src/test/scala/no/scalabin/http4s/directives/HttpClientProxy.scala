@@ -2,31 +2,29 @@ package no.scalabin.http4s
 package directives
 
 import cats.Monad
-import cats.effect.IO
-import fs2.StreamApp
+import cats.effect._
 import org.http4s._
 import org.http4s.server.blaze._
 import org.http4s.client.blaze._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
-object HttpClientProxy extends StreamApp[IO] {
+object HttpClientProxy extends IOApp {
   val httpClient = Http1Client[IO]().unsafeRunSync()
 
-  override def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, StreamApp.ExitCode] = {
+  override def run(args: List[String]): IO[ExitCode] = {
     implicit val directives: Directives[IO] = Directives[IO]
 
     val pathMapping = Plan[IO].PathMapping
 
-    val service = HttpService[IO] {
+    val service = HttpRoutes.of {
       pathMapping {
         case "/flatMap" => directiveflatMap(getExample())
         case "/"        => directiveFor(getExample())
       }
     }
 
-    BlazeBuilder[IO].bindLocal(8080).mountService(service).serve
+    BlazeBuilder[IO].bindLocal(8080).mountService(service, "/").serve.compile.drain.map(_ => ExitCode.Success)
   }
 
   def getExample(): IO[Response[IO]] = {
