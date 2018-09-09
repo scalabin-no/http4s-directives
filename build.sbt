@@ -16,8 +16,10 @@ scalacOptions ++= Seq(
 
 val http4sVersion = "0.18.17"
 
-libraryDependencies += "org.http4s"    %% "http4s-core"         % http4sVersion
-libraryDependencies += "org.typelevel" %% "cats-effect"         % "0.10.1"
-libraryDependencies += "org.http4s"    %% "http4s-dsl"          % http4sVersion
-libraryDependencies += "org.http4s"    %% "http4s-blaze-server" % http4sVersion % "test"
-libraryDependencies += "org.http4s"    %% "http4s-blaze-client" % http4sVersion % "test"
+libraryDependencies ++= Seq(
+  "org.http4s"    %% "http4s-core"         % http4sVersion,
+  "org.typelevel" %% "cats-effect"         % "0.10.1",
+  "org.http4s"    %% "http4s-dsl"          % http4sVersion,
+  "org.http4s"    %% "http4s-blaze-server" % http4sVersion % "test",
+  "org.http4s"    %% "http4s-blaze-client" % http4sVersion % "test"
+)
