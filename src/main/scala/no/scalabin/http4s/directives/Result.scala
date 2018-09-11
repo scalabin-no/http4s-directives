@@ -1,34 +1,28 @@
 package no.scalabin.http4s.directives
 
 import cats.{Applicative, Eval, Monad, Traverse}
+import org.http4s.Response
 
-import scala.language.higherKinds
+import scala.language.{higherKinds, reflectiveCalls}
 
 object Result {
+  def success[F[_], A](a: A): Result[F, A]           = Success(a)
+  def failure[F[_], A](a: Response[F]): Result[F, A] = Failure(a)
+  def error[F[_], A](a: Response[F]): Result[F, A]   = Error(a)
 
-  def merge[A](result: Result[A, A]): A = result match {
-    case Success(value) => value
-    case Failure(value) => value
-    case Error(value)   => value
-  }
+  case class Success[F[_], A](value: A) extends Result[F, A]
 
-  def success[A](a: A): Result[Nothing, A] = Success(a)
-  def failure[A](a: A): Result[A, Nothing] = Failure(a)
-  def error[A](a: A): Result[A, Nothing]   = Error(a)
+  case class Failure[F[_], A](value: Response[F]) extends Result[F, A]
 
-  case class Success[+A](value: A) extends Result[Nothing, A]
+  case class Error[F[_], A](value: Response[F]) extends Result[F, A]
 
-  case class Failure[+A](value: A) extends Result[A, Nothing]
+  implicit def monad[F[_]]: Monad[({ type X[A] = Result[F, A] })#X] = new Monad[({ type X[A] = Result[F, A] })#X] {
 
-  case class Error[+A](value: A) extends Result[A, Nothing]
+    override def pure[A](x: A): Result[F, A] = Success(x)
 
-  implicit def monad[L] = new Monad[({ type X[A] = Result[L, A] })#X] {
+    override def flatMap[A, B](fa: Result[F, A])(f: A => Result[F, B]): Result[F, B] = fa flatMap f
 
-    override def pure[A](x: A) = Success(x)
-
-    override def flatMap[A, B](fa: Result[L, A])(f: (A) => Result[L, B]) = fa flatMap f
-
-    override def tailRecM[A, B](a: A)(f: (A) => Result[L, Either[A, B]]) = {
+    override def tailRecM[A, B](a: A)(f: A => Result[F, Either[A, B]]): Result[F, B] = {
       f(a) match {
         case Success(Left(v))  => tailRecM(v)(f)
         case Success(Right(v)) => Success(v)
@@ -38,38 +32,44 @@ object Result {
     }
   }
 
-  implicit def traverse[L] = new Traverse[({ type X[A] = Result[L, A] })#X] {
-    override def traverse[G[_], A, B](fa: Result[L, A])(f: (A) => G[B])(implicit G: Applicative[G]) =
+  implicit def traverse[F[_]] = new Traverse[({ type X[A] = Result[F, A] })#X] {
+    override def traverse[G[_], A, B](fa: Result[F, A])(f: A => G[B])(implicit G: Applicative[G]) =
       fa match {
         case Result.Success(value) => G.map(f(value))(Result.Success(_))
         case Result.Failure(value) => G.pure(Result.Failure(value))
         case Result.Error(value)   => G.pure(Result.Error(value))
       }
 
-    override def foldLeft[A, B](fa: Result[L, A], b: B)(f: (B, A) => B) = fa match {
+    override def foldLeft[A, B](fa: Result[F, A], b: B)(f: (B, A) => B) = fa match {
       case Result.Success(value) => f(b, value)
       case _                     => b
     }
 
-    override def foldRight[A, B](fa: Result[L, A], lb: Eval[B])(f: (A, Eval[B]) => Eval[B]) = fa match {
+    override def foldRight[A, B](fa: Result[F, A], lb: Eval[B])(f: (A, Eval[B]) => Eval[B]) = fa match {
       case Result.Success(value) => f(value, lb)
       case _                     => lb
     }
   }
 }
 
-sealed trait Result[+L, +R] extends Product with Serializable {
-  def flatMap[LL >: L, B](f: R => Result[LL, B]): Result[LL, B] = this match {
+sealed trait Result[F[_], A] extends Product with Serializable {
+  def flatMap[B](f: A => Result[F, B]): Result[F, B] = this match {
     case Result.Success(value) => f(value)
     case Result.Failure(value) => Result.Failure(value)
     case Result.Error(value)   => Result.Error(value)
   }
 
-  def orElse[LL >: L, RR >: R](next: Result[LL, RR]): Result[LL, RR] = this match {
+  def orElse(next: Result[F, A]): Result[F, A] = this match {
     case Result.Success(value) => Result.Success(value)
     case Result.Failure(_)     => next
     case Result.Error(value)   => Result.Error(value)
   }
 
-  def map[B](f: R => B) = flatMap(r => Result.Success(f(r)))
+  def map[B](f: A => B): Result[F, B] = flatMap(r => Result.Success[F, B](f(r)))
+
+  def response(implicit ev: A =:= Response[F]): Response[F] = this match {
+    case Result.Success(response) => response
+    case Result.Failure(response) => response
+    case Result.Error(response)   => response
+  }
 }

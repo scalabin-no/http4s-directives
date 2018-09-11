@@ -7,44 +7,44 @@ import org.http4s._
 import scala.language.{higherKinds, implicitConversions}
 
 object Directives {
-  def apply[F[+ _]](implicit M: Monad[F]): Directives[F] = new Directives[F]
+  def apply[F[_]](implicit M: Monad[F]): Directives[F] = new Directives[F]
 }
 
-class Directives[F[+ _]: Monad] {
+class Directives[F[_]: Monad] {
 
-  type Result[+L, +R] = directives.Result[L, R]
+  type Result[A] = directives.Result[F, A]
   val Result = directives.Result
 
-  type Directive[+L, +R] = directives.Directive[F, L, R]
+  type Directive[A] = directives.Directive[F, A]
 
   object Directive {
-    def apply[L, R](run: Request[F] => F[Result[L, R]]): Directive[L, R] = directives.Directive[F, L, R](run)
+    def apply[A](run: Request[F] => F[Result[A]]): Directive[A] = directives.Directive(run)
   }
 
-  def result[L, R](result: Result[L, R]) = directives.Directive.result[F, L, R](result)
+  def result[A](result: Result[A]) = directives.Directive.result(result)
 
-  def pure[R](success: R)    = directives.Directive.pure[F, R](success)
-  def success[R](success: R) = pure(success)
-  def failure[L](failure: L) = directives.Directive.failure[F, L](failure)
-  def error[L](error: L)     = directives.Directive.error[F, L](error)
+  def pure[A](success: A)              = directives.Directive.pure(success)
+  def success[A](success: A)           = pure(success)
+  def failure[A](failure: Response[F]) = directives.Directive.failure[F, A](failure)
+  def error[A](error: Response[F])     = directives.Directive.error[F, A](error)
 
-  def liftF[R](success: F[R])    = directives.Directive.liftF[F, R](success)
-  def successF[R](success: F[R]) = liftF(success)
-  def failureF[L](failure: F[L]) = directives.Directive.failureF[F, L](failure)
-  def errorF[L](error: F[L])     = directives.Directive.errorF[F, L](error)
+  def liftF[A](success: F[A])           = directives.Directive.liftF[F, A](success)
+  def successF[A](success: F[A])        = liftF(success)
+  def failureF(failure: F[Response[F]]) = directives.Directive.failureF[F, Response[F]](failure)
+  def errorF(error: F[Response[F]])     = directives.Directive.errorF[F, Response[F]](error)
 
-  def getOrElseF[L, R](opt: F[Option[R]], orElse: => F[L]) = directives.Directive.getOrElseF[F, L, R](opt, orElse)
+  def getOrElseF[A](opt: F[Option[A]], orElse: => F[Response[F]]) = directives.Directive.getOrElseF(opt, orElse)
 
-  def getOrElse[A, L](opt: Option[A], orElse: => F[L]) = directives.Directive.getOrElse[F, L, A](opt, orElse)
+  def getOrElse[A](opt: Option[A], orElse: => F[Response[F]]) = directives.Directive.getOrElse(opt, orElse)
 
-  type Filter[+L] = directives.Directive.Filter[F, L]
+  type Filter = directives.Directive.Filter[F]
   val Filter = directives.Directive.Filter
 
   val commit = directives.Directive.commit
 
-  def value[L, R](f: F[Result[L, R]]) = Directive[L, R](_ => f)
+  def value[A](f: F[Result[A]]) = Directive[A](_ => f)
 
-  implicit def DirectiveMonad[L] = directives.Directive.monad[F, L]
+  implicit def DirectiveMonad = directives.Directive.monad[F]
 
   type when[A] = directives.when[F, A]
   val when = directives.when
@@ -52,6 +52,6 @@ class Directives[F[+ _]: Monad] {
   object ops extends DirectiveOps[F] with RequestDirectives[F]
 
   object implicits {
-    implicit def wrapSuccess[S](f: F[S]): directives.Directive[F, Nothing, S] = ops.MonadDecorator(f).successF
+    implicit def wrapSuccess[S](f: F[S]): directives.Directive[F, S] = ops.MonadDecorator(f).successF
   }
 }
