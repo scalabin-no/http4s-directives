@@ -14,7 +14,7 @@ scalacOptions ++= Seq(
   "utf-8"
 )
 
-val http4sVersion = "0.18.14"
+val http4sVersion = "0.18.17"
 
 libraryDependencies += "org.http4s"    %% "http4s-core"         % http4sVersion
 libraryDependencies += "org.typelevel" %% "cats-effect"         % "0.10.1"
