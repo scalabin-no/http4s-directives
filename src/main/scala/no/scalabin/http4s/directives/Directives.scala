@@ -28,10 +28,10 @@ class Directives[F[_]: Monad] {
   def failure[A](failure: Response[F]) = directives.Directive.failure[F, A](failure)
   def error[A](error: Response[F])     = directives.Directive.error[F, A](error)
 
-  def liftF[A](success: F[A])           = directives.Directive.liftF[F, A](success)
-  def successF[A](success: F[A])        = liftF(success)
-  def failureF(failure: F[Response[F]]) = directives.Directive.failureF[F, Response[F]](failure)
-  def errorF(error: F[Response[F]])     = directives.Directive.errorF[F, Response[F]](error)
+  def liftF[A](success: F[A])              = directives.Directive.liftF[F, A](success)
+  def successF[A](success: F[A])           = liftF(success)
+  def failureF[A](failure: F[Response[F]]) = directives.Directive.failureF[F, A](failure)
+  def errorF[A](error: F[Response[F]])     = directives.Directive.errorF[F, A](error)
 
   def getOrElseF[A](opt: F[Option[A]], orElse: => F[Response[F]]) = directives.Directive.getOrElseF(opt, orElse)
 

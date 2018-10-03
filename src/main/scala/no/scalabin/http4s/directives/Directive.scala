@@ -66,13 +66,13 @@ object Directive {
 
   def error[F[_]: Monad, A](error: => Response[F]): Directive[F, A] = result[F, A](Result.error[F, A](error))
 
-  def liftF[F[_]: Monad, X](f: F[X]): Directive[F, X] = Directive[F, X](_ => f.map(Result.Success(_)))
+  def liftF[F[_]: Monad, A](f: F[A]): Directive[F, A] = Directive[F, A](_ => f.map(Result.Success(_)))
 
-  def successF[F[_]: Monad, X](f: F[X]): Directive[F, X] = liftF(f)
+  def successF[F[_]: Monad, A](f: F[A]): Directive[F, A] = liftF(f)
 
-  def failureF[F[_]: Monad, X](f: F[Response[F]]): Directive[F, X] = Directive[F, X](_ => f.map(Result.Failure[F, X]))
+  def failureF[F[_]: Monad, A](f: F[Response[F]]): Directive[F, A] = Directive[F, A](_ => f.map(Result.Failure[F, A]))
 
-  def errorF[F[_]: Monad, X](f: F[Response[F]]): Directive[F, X] = Directive[F, X](_ => f.map(Result.Error[F, X]))
+  def errorF[F[_]: Monad, A](f: F[Response[F]]): Directive[F, A] = Directive[F, A](_ => f.map(Result.Error[F, A]))
 
   case class Filter[F[_]](result: Boolean, failure: F[Response[F]])
 
