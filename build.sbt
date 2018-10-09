@@ -4,7 +4,7 @@ name := "http4s-directives"
 
 scalaVersion := crossScalaVersions.value.head
 
-crossScalaVersions := Seq("2.12.6", "2.11.12")
+crossScalaVersions := Seq("2.12.7", "2.11.12")
 
 scalacOptions ++= Seq(
   "-feature",
@@ -14,7 +14,7 @@ scalacOptions ++= Seq(
   "utf-8"
 )
 
-val http4sVersion = "0.18.17"
+val http4sVersion = "0.18.19"
 
 libraryDependencies ++= Seq(
   "org.http4s"    %% "http4s-core"         % http4sVersion,
