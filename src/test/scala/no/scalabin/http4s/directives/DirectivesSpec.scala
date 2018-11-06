@@ -5,6 +5,7 @@ import java.time.{LocalDateTime, ZoneOffset}
 import cats.effect._
 import cats.effect.internals.IOContextShift
 import org.http4s._
+import org.http4s.implicits._
 import org.http4s.dsl.impl.Root
 import org.http4s.dsl.io._
 import org.http4s.headers.`If-Modified-Since`

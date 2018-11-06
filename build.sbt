@@ -14,7 +14,7 @@ scalacOptions ++= Seq(
   "utf-8"
 )
 
-val http4sVersion = "0.20.0-M1"
+val http4sVersion = "0.20.0-M2"
 
 libraryDependencies ++= Seq(
   "org.http4s"    %% "http4s-core"         % http4sVersion,
