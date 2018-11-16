@@ -24,3 +24,17 @@ libraryDependencies ++= Seq(
   "org.http4s"    %% "http4s-blaze-client" % http4sVersion % Test,
   "org.scalatest" %% "scalatest"           % "3.0.5"       % Test
 )
+
+micrositeName := "http4s-directives"
+micrositeDescription := "Directives for http4s"
+micrositeAuthor := "scalabin-no"
+micrositeOrganizationHomepage := "scalabin.no"
+micrositeDocumentationUrl := "/http4s-directives/docs/"
+micrositeGithubOwner := "scalabin-no"
+micrositeGithubRepo := "http4s-directives"
+micrositeHighlightTheme := "tomorrow"
+micrositeShareOnSocial := false
+micrositeGitterChannel := false
+micrositeBaseUrl := "/http4s-directives/"
+
+enablePlugins(MicrositesPlugin)
