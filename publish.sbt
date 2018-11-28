@@ -78,5 +78,12 @@ developers ++= List(
     "Kåre Blakstad",
     "",
     null
-  )
+  ),
+  Developer(
+    "ingarabr",
+    "Ingar Abrahamsen",
+    "",
+    new URL("http://twitter.com/ingarabr")
+  ),
+
 )
