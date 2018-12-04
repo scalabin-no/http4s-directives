@@ -27,13 +27,12 @@ libraryDependencies ++= Seq(
 micrositeName := "http4s-directives"
 micrositeDescription := "Directives for http4s"
 micrositeAuthor := "scalabin-no"
-micrositeOrganizationHomepage := "scalabin.no"
-micrositeDocumentationUrl := "/http4s-directives/docs/"
+micrositeOrganizationHomepage := "https://http4s-directives.scalabin.no"
+micrositeDocumentationUrl := "docs/"
 micrositeGithubOwner := "scalabin-no"
 micrositeGithubRepo := "http4s-directives"
 micrositeHighlightTheme := "tomorrow"
 micrositeShareOnSocial := false
 micrositeGitterChannel := false
-micrositeBaseUrl := "/http4s-directives/"
 
 enablePlugins(MicrositesPlugin)
