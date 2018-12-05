@@ -2,35 +2,38 @@ package no.scalabin.http4s
 package directives
 
 import cats.Monad
-import cats.effect.IO
-import fs2.StreamApp
+import cats.effect._
+import cats.implicits._
 import org.http4s._
-import org.http4s.server.blaze._
+import org.http4s.client.Client
 import org.http4s.client.blaze._
+import org.http4s.server.blaze._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-object HttpClientProxy extends StreamApp[IO] {
-  val httpClient = Http1Client[IO]().unsafeRunSync()
+object HttpClientProxy extends IOApp {
 
-  override def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, StreamApp.ExitCode] = {
+  override def run(args: List[String]): IO[ExitCode] = {
     implicit val directives: Directives[IO] = Directives[IO]
+    val client = BlazeClientBuilder[IO](executionContext = ExecutionContext.global).resource
 
     val pathMapping = Plan[IO].PathMapping
 
-    val service = HttpService[IO] {
+    val service = HttpRoutes.of {
       pathMapping {
-        case "/flatMap" => directiveflatMap(getExample())
-        case "/"        => directiveFor(getExample())
+        case "/flatMap" => directiveflatMap(getExample(client))
+        case "/"        => directiveFor(getExample(client))
       }
     }
 
-    BlazeBuilder[IO].bindLocal(8080).mountService(service).serve
+    BlazeBuilder[IO].bindLocal(8080).mountService(service, "/").serve.compile.drain.as(ExitCode.Success)
   }
 
-  def getExample(): IO[Response[IO]] = {
-    httpClient.get("https://example.org/")(r => IO(r))
+  def getExample(clientResource: Resource[IO, Client[IO]]): IO[Response[IO]] = {
+    clientResource.use( httpClient =>
+      httpClient.get("https://example.org/")(r => IO(r))
+    )
   }
 
   type ValueDirective[F[_], A] = Directive[F, A]

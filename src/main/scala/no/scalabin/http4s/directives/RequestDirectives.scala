@@ -43,13 +43,13 @@ trait RequestOps {
   def headerOrElse[F[_]: Monad](key: String, f: => F[Response[F]]): Directive[F, Header] =
     header(key).flatMap(opt => Directive.getOrElse(opt, f))
 
-  def cookies[F[_]: Monad]: Directive[F, Option[NonEmptyList[Cookie]]] =
+  def cookies[F[_]: Monad]: Directive[F, Option[NonEmptyList[RequestCookie]]] =
     header(org.http4s.headers.Cookie).map(_.map(_.values))
 
-  def cookiesOrElse[F[_]: Monad](f: => F[Response[F]]): Directive[F, NonEmptyList[Cookie]] =
+  def cookiesOrElse[F[_]: Monad](f: => F[Response[F]]): Directive[F, NonEmptyList[RequestCookie]] =
     cookies.flatMap(opt => Directive.getOrElse(opt, f))
 
-  def cookie[F[_]: Monad](name: String): Directive[F, Option[Cookie]] =
+  def cookie[F[_]: Monad](name: String): Directive[F, Option[RequestCookie]] =
     cookies.map(_.flatMap(_.find(c => c.name == name)))
 
   def uri[F[_]: Monad]: Directive[F, Uri]       = Directive.request.map(_.uri)

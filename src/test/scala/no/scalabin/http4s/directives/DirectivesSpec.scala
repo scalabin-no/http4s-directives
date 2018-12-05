@@ -3,7 +3,9 @@ package no.scalabin.http4s.directives
 import java.time.{LocalDateTime, ZoneOffset}
 
 import cats.effect._
+import cats.effect.internals.IOContextShift
 import org.http4s._
+import org.http4s.implicits._
 import org.http4s.dsl.impl.Root
 import org.http4s.dsl.io._
 import org.http4s.headers.`If-Modified-Since`
@@ -11,6 +13,8 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class DirectivesSpec extends FlatSpec with Matchers {
   private val lastModifiedTime = LocalDateTime.now()
+
+  implicit def contextShift: ContextShift[IO] = IOContextShift.global
 
   it should "respond with a ok response" in {
     val response = createService().orNotFound
@@ -53,14 +57,14 @@ class DirectivesSpec extends FlatSpec with Matchers {
     }
   }
 
-  private def createService(): HttpService[IO] = {
+  private def createService(): HttpRoutes[IO] = {
     implicit val Direct: Directives[IO] = Directives[IO]
     import Direct._
     import ops._
 
     val Mapping = Plan[IO]().Mapping(req => Path(req.uri.path))
 
-    HttpService[IO] {
+    HttpRoutes.of {
       Mapping {
         case Root / "hello" =>
           for {

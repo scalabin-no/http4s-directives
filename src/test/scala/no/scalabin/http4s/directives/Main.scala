@@ -2,18 +2,16 @@ package no.scalabin.http4s.directives
 
 import java.time.LocalDateTime
 
+import cats.effect._
+import cats.implicits._
 import org.http4s._
-import org.http4s.dsl.io._
-import cats.effect.IO
-import fs2.StreamApp
 import org.http4s.dsl.impl.Root
+import org.http4s.dsl.io._
 import org.http4s.server.blaze.BlazeBuilder
 
-object Main extends StreamApp[IO] {
+object Main extends IOApp {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  override def stream(args: List[String], requestShutdown: IO[Unit]) = {
+  override def run(args: List[String]) = {
     implicit val Direct: Directives[IO] = Directives[IO]
 
     import Direct._
@@ -23,7 +21,7 @@ object Main extends StreamApp[IO] {
 
     val lm = LocalDateTime.now()
 
-    val service = HttpService[IO] {
+    val service = HttpRoutes.of {
       Mapping {
         case Root / "hello" => {
           for {
@@ -37,6 +35,6 @@ object Main extends StreamApp[IO] {
       }
     }
 
-    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(service, "/").serve
+    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(service, "/").serve.compile.drain.as(ExitCode.Success)
   }
 }

@@ -14,11 +14,10 @@ scalacOptions ++= Seq(
   "utf-8"
 )
 
-val http4sVersion = "0.18.19"
+val http4sVersion = "0.20.0-M3"
 
 libraryDependencies ++= Seq(
   "org.http4s"    %% "http4s-core"         % http4sVersion,
-  "org.typelevel" %% "cats-effect"         % "0.10.1",
   "org.http4s"    %% "http4s-dsl"          % http4sVersion,
   "org.http4s"    %% "http4s-blaze-server" % http4sVersion % Test,
   "org.http4s"    %% "http4s-blaze-client" % http4sVersion % Test,
