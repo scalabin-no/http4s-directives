@@ -29,17 +29,9 @@ To begin, add the following dependency to your SBT build file:
 "no.scalabin.http4s" %% "http4s-directives" % http4sDirectivesVersion
 ```
 
-You also need http4s as a dependency. See the table bellow to find a matching 
-version of http4s.
-
-| http4s-directives | http4s |
-|---|--|
-| 0.5.x | 0.18.x |
-| 0.4.x | 0.18.x |
-| 0.3.x | 0.18.x |
-| 0.2.x | 0.18.x |
-| 0.1.x | 0.18.x |
-
+The new versioning scheme will follow the http4s releases.
+Starting with `0.20.0-M4-1`
+Previous versions targeted the `0.18.x` series. 
 
 
 # Acknowledgements

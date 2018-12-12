@@ -18,7 +18,7 @@ import org.http4s.dsl.impl.Root
 
 ## Creating your first directive
 
-```tut:silent
+```tut
 implicit val Direct: Directives[IO] = Directives[IO]
 
 import Direct._
@@ -26,7 +26,7 @@ import ops._
 
 val Mapping = Plan[IO]().Mapping(req => Path(req.uri.path))
 
-val service = HttpService[IO] {
+val service = HttpRoutes.of[IO] {
   Mapping {
     case Root / "hello" => 
       for {
@@ -38,8 +38,8 @@ val service = HttpService[IO] {
 ```
 
 ### Parsing body
-```tut:silent
-val bodyService = HttpService[IO] {
+```tut
+val bodyService = HttpRoutes.of[IO] {
   Mapping {
     case Root / "hello" => 
       for {
@@ -52,8 +52,8 @@ val bodyService = HttpService[IO] {
 ```
 
 ### Query parameters
-```tut:silent
-val queryParamService = HttpService[IO] {
+```tut
+val queryParamService = HttpRoutes.of[IO] {
   Mapping {
     case Root / "hello" => 
       for {
