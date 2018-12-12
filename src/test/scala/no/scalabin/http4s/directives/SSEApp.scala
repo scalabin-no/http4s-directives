@@ -5,6 +5,7 @@ import cats.implicits._
 import fs2._
 import org.http4s._
 import org.http4s.dsl.io._
+import org.http4s.implicits._
 import org.http4s.server.blaze._
 
 import scala.concurrent.duration._
@@ -17,7 +18,7 @@ object SSEApp extends IOApp {
 
     val pathMapping = Plan[IO].PathMapping
 
-    val service = HttpRoutes.of {
+    val service = HttpRoutes.of[IO] {
       pathMapping {
         case _ =>
           for {
@@ -27,9 +28,9 @@ object SSEApp extends IOApp {
             res
           }
       }
-    }
+    }.orNotFound
 
-    BlazeBuilder[IO].bindLocal(8080).mountService(service, "/").serve.compile.drain.as(ExitCode.Success)
+    BlazeServerBuilder[IO].bindLocal(8080).withHttpApp(service).serve.compile.drain.as(ExitCode.Success)
   }
 
   def events: Stream[IO, Event] = {

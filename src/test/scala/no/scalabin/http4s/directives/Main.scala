@@ -7,7 +7,9 @@ import cats.implicits._
 import org.http4s._
 import org.http4s.dsl.impl.Root
 import org.http4s.dsl.io._
-import org.http4s.server.blaze.BlazeBuilder
+import org.http4s.implicits._
+import org.http4s.server.Router
+import org.http4s.server.blaze.BlazeServerBuilder
 
 object Main extends IOApp {
 
@@ -21,7 +23,7 @@ object Main extends IOApp {
 
     val lm = LocalDateTime.now()
 
-    val service = HttpRoutes.of {
+    val service = HttpRoutes.of[IO] {
       Mapping {
         case Root / "hello" => {
           for {
@@ -33,8 +35,8 @@ object Main extends IOApp {
           } yield res
         }
       }
-    }
+    }.orNotFound
 
-    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(service, "/").serve.compile.drain.as(ExitCode.Success)
+    BlazeServerBuilder[IO].bindHttp(8080, "localhost").withHttpApp(service).serve.compile.drain.as(ExitCode.Success)
   }
 }

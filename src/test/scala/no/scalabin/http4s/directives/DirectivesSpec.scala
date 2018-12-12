@@ -3,7 +3,6 @@ package no.scalabin.http4s.directives
 import java.time.{LocalDateTime, ZoneOffset}
 
 import cats.effect._
-import cats.effect.internals.IOContextShift
 import org.http4s._
 import org.http4s.implicits._
 import org.http4s.dsl.impl.Root
@@ -11,10 +10,12 @@ import org.http4s.dsl.io._
 import org.http4s.headers.`If-Modified-Since`
 import org.scalatest.{FlatSpec, Matchers}
 
+import scala.concurrent.ExecutionContext
+
 class DirectivesSpec extends FlatSpec with Matchers {
   private val lastModifiedTime = LocalDateTime.now()
 
-  implicit def contextShift: ContextShift[IO] = IOContextShift.global
+  implicit def contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
   it should "respond with a ok response" in {
     val response = createService().orNotFound

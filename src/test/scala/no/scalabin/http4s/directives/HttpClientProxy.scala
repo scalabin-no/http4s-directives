@@ -7,6 +7,7 @@ import cats.implicits._
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.client.blaze._
+import org.http4s.implicits._
 import org.http4s.server.blaze._
 
 import scala.concurrent.ExecutionContext
@@ -25,9 +26,9 @@ object HttpClientProxy extends IOApp {
         case "/flatMap" => directiveflatMap(getExample(client))
         case "/"        => directiveFor(getExample(client))
       }
-    }
+    }.orNotFound
 
-    BlazeBuilder[IO].bindLocal(8080).mountService(service, "/").serve.compile.drain.as(ExitCode.Success)
+    BlazeServerBuilder[IO].bindLocal(8080).withHttpApp(service).serve.compile.drain.as(ExitCode.Success)
   }
 
   def getExample(clientResource: Resource[IO, Client[IO]]): IO[Response[IO]] = {
