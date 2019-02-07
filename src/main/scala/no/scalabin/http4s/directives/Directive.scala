@@ -58,7 +58,9 @@ object Directive {
 
   def pure[F[_]: Monad, A](a: => A): Directive[F, A] = monad[F].pure(a)
 
-  def result[F[_]: Monad, A](result: => Result[F, A]): Directive[F, A] = Directive[F, A](_ => Monad[F].pure(result))
+  def result[F[_]: Monad, A](result: => Result[F, A]): Directive[F, A] = resultF(Monad[F].pure(result))
+
+  def resultF[F[_]: Monad, A](result: F[Result[F, A]]): Directive[F, A] = Directive[F, A](_ => result)
 
   def success[F[_]: Monad, A](success: => A): Directive[F, A] = pure(success)
 

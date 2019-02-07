@@ -2,11 +2,9 @@ package no.scalabin.http4s.directives
 
 import cats.{Eq, Monad}
 import cats.data.NonEmptyList
-import cats.syntax.functor._
-import org.http4s.dsl.impl.MethodConcat
+import cats.effect.Sync
 import org.http4s.util.CaseInsensitiveString
 import org.http4s._
-import org.http4s.headers.Allow
 
 import scala.language.{higherKinds, implicitConversions}
 
@@ -14,13 +12,6 @@ trait RequestDirectives[F[_]] {
 
   implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Monad[F]): Directive[F, Method] =
     when[F, Method] { case req if eq.eqv(M, req.method) => M } orElse sync.pure(Response[F](Status.MethodNotAllowed))
-
-  implicit def MethodsDirective(M: MethodConcat)(implicit sync: Monad[F]): Directive[F, Method] =
-    when[F, Method] { case req if M.methods(req.method) => req.method } orElse sync.pure(
-      Response[F](Status.MethodNotAllowed).putHeaders({
-        val methods = M.methods.toList.sortBy(_.name)
-        Allow(NonEmptyList(methods.head, methods.tail))
-      }))
 
   implicit def liftHeaderDirective[KEY <: HeaderKey](K: KEY)(implicit sync: Monad[F]): Directive[F, Option[K.HeaderT]] =
     request.header(K)
@@ -46,6 +37,9 @@ trait RequestOps {
   def cookies[F[_]: Monad]: Directive[F, Option[NonEmptyList[RequestCookie]]] =
     header(org.http4s.headers.Cookie).map(_.map(_.values))
 
+  def cookiesAsList[F[_]: Monad]: Directive[F, List[RequestCookie]] =
+    cookies.map(_.toList.flatMap(_.toList))
+
   def cookiesOrElse[F[_]: Monad](f: => F[Response[F]]): Directive[F, NonEmptyList[RequestCookie]] =
     cookies.flatMap(opt => Directive.getOrElse(opt, f))
 
@@ -62,6 +56,18 @@ trait RequestOps {
     opt => Directive.getOrElse(opt, f)
   )
 
-  def bodyAs[F[_]: Monad, A](implicit dec: EntityDecoder[F, A]): Directive[F, A] =
-    Directive(req => req.as[A].map(Result.success))
+  def bodyAs[F[_]: Sync, A](implicit dec: EntityDecoder[F, A]): Directive[F, A] =
+    bodyAs(_ => Response[F](Status.InternalServerError))
+
+  def bodyAs[F[_]: Sync, A](onError: DecodeFailure => Response[F])(implicit dec: EntityDecoder[F, A]): Directive[F, A] = {
+    Directive(
+      req =>
+        req
+          .attemptAs[A]
+          .fold(
+            e => Result.failure(onError(e)),
+            Result.success
+        )
+    )
+  }
 }
