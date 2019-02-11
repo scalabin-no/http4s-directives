@@ -60,7 +60,7 @@ val queryParamService = HttpRoutes.of[IO] {
         _         <- Method.POST
         name      <- request.queryParam[IO]("name")
         items     <- request.queryParams[IO]("items")
-        nickname  <- request.queryParamOrElse[IO]("nickname", BadRequest("missing nickname"))
+        nickname  <- request.queryParamOrElseF[IO]("nickname", BadRequest("missing nickname"))
         r         <- Ok(s"Hello $name($nickname): ${items.mkString(",")}").successF
       } yield r
   }

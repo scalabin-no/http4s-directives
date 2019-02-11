@@ -70,7 +70,7 @@ class DirectivesSpec extends FlatSpec with Matchers {
         case Root / "hello" =>
           for {
             _   <- Method.GET
-            res <- Conditional.ifModifiedSince(lastModifiedTime, Ok("Hello World"))
+            res <- Conditional.ifModifiedSinceF(lastModifiedTime, Ok("Hello World"))
             foo <- request.queryParam[IO]("foo")
             if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
           } yield res

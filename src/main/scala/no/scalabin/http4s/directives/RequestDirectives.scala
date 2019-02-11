@@ -11,7 +11,7 @@ import scala.language.{higherKinds, implicitConversions}
 trait RequestDirectives[F[_]] {
 
   implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Monad[F]): Directive[F, Method] =
-    when[F, Method] { case req if eq.eqv(M, req.method) => M } orElse sync.pure(Response[F](Status.MethodNotAllowed))
+    when[F, Method] { case req if eq.eqv(M, req.method) => M } orElse Response[F](Status.MethodNotAllowed)
 
   implicit def liftHeaderDirective[KEY <: HeaderKey](K: KEY)(implicit sync: Monad[F]): Directive[F, Option[K.HeaderT]] =
     request.header(K)
@@ -26,13 +26,23 @@ trait RequestDirectives[F[_]] {
 trait RequestOps {
 
   def headers[F[_]: Monad]: Directive[F, Headers] = Directive.request.map(_.headers)
+
   def header[F[_]: Monad, KEY <: HeaderKey](key: KEY): Directive[F, Option[key.HeaderT]] =
     headers.map(_.get(key.name)).map(_.flatMap(h => key.matchHeader(h)))
-  def headerOrElse[F[_]: Monad, KEY <: HeaderKey](key: KEY, f: => F[Response[F]]): Directive[F, key.HeaderT] =
-    header(key).flatMap(opt => Directive.getOrElse(opt, f))
+
+  def headerOrElse[F[_]: Monad, KEY <: HeaderKey](key: KEY, orElse: => Response[F]): Directive[F, key.HeaderT] =
+    headerOrElseF(key, Monad[F].pure(orElse))
+
+  def headerOrElseF[F[_]: Monad, KEY <: HeaderKey](key: KEY, orElse: F[Response[F]]): Directive[F, key.HeaderT] =
+    header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
+
   def header[F[_]: Monad](key: String): Directive[F, Option[Header]] = headers.map(_.get(CaseInsensitiveString(key)))
-  def headerOrElse[F[_]: Monad](key: String, f: => F[Response[F]]): Directive[F, Header] =
-    header(key).flatMap(opt => Directive.getOrElse(opt, f))
+
+  def headerOrElse[F[_]: Monad](key: String, orElse: => Response[F]): Directive[F, Header] =
+    headerOrElseF(key, Monad[F].pure(orElse))
+
+  def headerOrElseF[F[_]: Monad](key: String, orElse: F[Response[F]]): Directive[F, Header] =
+    header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
   def cookies[F[_]: Monad]: Directive[F, Option[NonEmptyList[RequestCookie]]] =
     header(org.http4s.headers.Cookie).map(_.map(_.values))
@@ -40,8 +50,11 @@ trait RequestOps {
   def cookiesAsList[F[_]: Monad]: Directive[F, List[RequestCookie]] =
     cookies.map(_.toList.flatMap(_.toList))
 
-  def cookiesOrElse[F[_]: Monad](f: => F[Response[F]]): Directive[F, NonEmptyList[RequestCookie]] =
-    cookies.flatMap(opt => Directive.getOrElse(opt, f))
+  def cookiesOrElse[F[_]: Monad](orElse: => Response[F]): Directive[F, NonEmptyList[RequestCookie]] =
+    cookiesOrElseF(Monad[F].pure(orElse))
+
+  def cookiesOrElseF[F[_]: Monad](orElse: F[Response[F]]): Directive[F, NonEmptyList[RequestCookie]] =
+    cookies.flatMap(opt => Directive.getOrElseF(opt, orElse))
 
   def cookie[F[_]: Monad](name: String): Directive[F, Option[RequestCookie]] =
     cookies.map(_.flatMap(_.find(c => c.name == name)))
@@ -52,8 +65,11 @@ trait RequestOps {
 
   def queryParams[F[_]: Monad](name: String): Directive[F, Seq[String]]   = query.map(_.multiParams.getOrElse(name, Nil))
   def queryParam[F[_]: Monad](name: String): Directive[F, Option[String]] = query.map(_.params.get(name))
-  def queryParamOrElse[F[_]: Monad](name: String, f: => F[Response[F]]): Directive[F, String] = queryParam(name).flatMap(
-    opt => Directive.getOrElse(opt, f)
+  def queryParamOrElse[F[_]: Monad](name: String, orElse: => Response[F]): Directive[F, String] =
+    queryParamOrElseF(name, Monad[F].pure(orElse))
+
+  def queryParamOrElseF[F[_]: Monad](name: String, orElse: F[Response[F]]): Directive[F, String] = queryParam(name).flatMap(
+    opt => Directive.getOrElseF(opt, orElse)
   )
 
   def bodyAs[F[_]: Sync, A](implicit dec: EntityDecoder[F, A]): Directive[F, A] =
