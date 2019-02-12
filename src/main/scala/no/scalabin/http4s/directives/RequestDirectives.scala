@@ -59,6 +59,12 @@ trait RequestOps {
   def cookie[F[_]: Monad](name: String): Directive[F, Option[RequestCookie]] =
     cookies.map(_.flatMap(_.find(c => c.name == name)))
 
+  def cookieOrElse[F[_]: Monad](name: String, orElse: => Response[F]): Directive[F, RequestCookie] =
+    cookie(name).flatMap(opt => Directive.getOrElse(opt, orElse))
+
+  def cookieOrElseF[F[_]: Monad](name: String, orElse: F[Response[F]]): Directive[F, RequestCookie] =
+    cookie(name).flatMap(opt => Directive.getOrElseF(opt, orElse))
+
   def uri[F[_]: Monad]: Directive[F, Uri]       = Directive.request.map(_.uri)
   def path[F[_]: Monad]: Directive[F, Uri.Path] = uri.map(_.path)
   def query[F[_]: Monad]: Directive[F, Query]   = uri.map(_.query)
