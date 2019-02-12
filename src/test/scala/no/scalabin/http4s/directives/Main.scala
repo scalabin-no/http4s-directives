@@ -28,7 +28,7 @@ object Main extends IOApp {
         case Root / "hello" => {
           for {
             _   <- Method.GET
-            res <- Conditional.ifModifiedSince(lm, Ok("Hello World"))
+            res <- Conditional.ifModifiedSinceF(lm, Ok("Hello World"))
             foo <- request.queryParam[IO]("foo")
             if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
             //res <- Ok("Hello world")

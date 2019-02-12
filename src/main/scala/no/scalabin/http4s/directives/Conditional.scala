@@ -16,7 +16,11 @@ object Conditional {
 
   private object request extends RequestOps
 
-  def ifModifiedSince[F[_]: Monad](lm: LocalDateTime, orElse: => F[Response[F]]): ResponseDirective[F] = {
+  def ifModifiedSince[F[_]: Monad](lm: LocalDateTime, orElse: => Response[F]): ResponseDirective[F] = {
+    ifModifiedSinceF(lm, Monad[F].pure(orElse))
+  }
+
+  def ifModifiedSinceF[F[_]: Monad](lm: LocalDateTime, orElse: F[Response[F]]): ResponseDirective[F] = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
       mod <- request.header(`If-Modified-Since`)
@@ -27,7 +31,11 @@ object Conditional {
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
-  def ifUnmodifiedSince[F[_]: Monad](lm: LocalDateTime, orElse: => F[Response[F]]): ResponseDirective[F] = {
+  def ifUnmodifiedSince[F[_]: Monad](lm: LocalDateTime, orElse: => Response[F]): ResponseDirective[F] = {
+    ifUnmodifiedSinceF(lm, Monad[F].pure(orElse))
+  }
+
+  def ifUnmodifiedSinceF[F[_]: Monad](lm: LocalDateTime, orElse: F[Response[F]]): ResponseDirective[F] = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
       mod <- request.header(IfUnmodifiedSince)
@@ -38,7 +46,11 @@ object Conditional {
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
-  def ifNoneMatch[F[_]: Monad](tag: ETag.EntityTag, orElse: => F[Response[F]]): ResponseDirective[F] = {
+  def ifNoneMatch[F[_]: Monad](tag: ETag.EntityTag, orElse: => Response[F]): ResponseDirective[F] = {
+    ifNoneMatchF(tag, Monad[F].pure(orElse))
+  }
+
+  def ifNoneMatchF[F[_]: Monad](tag: ETag.EntityTag, orElse: F[Response[F]]): ResponseDirective[F] = {
     for {
       mod <- request.header(`If-None-Match`)
       res <- mod
@@ -47,7 +59,11 @@ object Conditional {
     } yield res.putHeaders(ETag(tag))
   }
 
-  def ifMatch[F[_]: Monad](tag: ETag.EntityTag, orElse: => F[Response[F]]): ResponseDirective[F] = {
+  def ifMatch[F[_]: Monad](tag: ETag.EntityTag, orElse: => Response[F]): ResponseDirective[F] = {
+    ifMatchF(tag, Monad[F].pure(orElse))
+  }
+
+  def ifMatchF[F[_]: Monad](tag: ETag.EntityTag, orElse: F[Response[F]]): ResponseDirective[F] = {
     for {
       mod <- request.header(IfMatch)
       res <- mod

@@ -33,9 +33,11 @@ class Directives[F[_]: Monad] {
   def failureF[A](failure: F[Response[F]]) = directives.Directive.failureF[F, A](failure)
   def errorF[A](error: F[Response[F]])     = directives.Directive.errorF[F, A](error)
 
-  def getOrElseF[A](opt: F[Option[A]], orElse: => F[Response[F]]) = directives.Directive.getOrElseF(opt, orElse)
+  def getOrElseF[A](opt: F[Option[A]], orElse: F[Response[F]]) = directives.Directive.getOrElseF(opt, orElse)
 
-  def getOrElse[A](opt: Option[A], orElse: => F[Response[F]]) = directives.Directive.getOrElse(opt, orElse)
+  def getOrElseF[A](opt: Option[A], orElse: F[Response[F]]) = directives.Directive.getOrElseF(opt, orElse)
+
+  def getOrElse[A](opt: Option[A], orElse: => Response[F]) = directives.Directive.getOrElse(opt, orElse)
 
   type Filter = directives.Directive.Filter[F]
   val Filter = directives.Directive.Filter
@@ -44,7 +46,7 @@ class Directives[F[_]: Monad] {
 
   def value[A](f: F[Result[A]]) = Directive[A](_ => f)
 
-  implicit def DirectiveMonad = directives.Directive.monad[F]
+  implicit def DirectiveMonad: Monad[({ type X[A] = Directive[A] })#X] = directives.Directive.monad[F]
 
   type when[A] = directives.when[F, A]
   val when = directives.when
