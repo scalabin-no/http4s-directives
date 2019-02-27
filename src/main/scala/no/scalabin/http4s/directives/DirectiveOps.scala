@@ -1,12 +1,19 @@
 package no.scalabin.http4s.directives
 
 import cats.data.{EitherT, OptionT}
+import cats.effect.Sync
 import cats.{Applicative, Monad}
-import org.http4s.Response
+import org.http4s.{HttpRoutes, Response}
+import cats.syntax.functor._
 
 import scala.language.higherKinds
 
 trait DirectiveOps[F[_]] {
+  implicit class DirectiveKleisli(dir: Directive[F, Response[F]])(implicit F: Sync[F]) {
+    def toHttpRoutes: HttpRoutes[F] =
+      HttpRoutes(req => OptionT.liftF(dir.run(req).map(_.response)))
+  }
+
   implicit class FilterSyntax(b: Boolean) {
     def orF(failureF: F[Response[F]])                           = Directive.Filter(b, failureF)
     def or(failure: => Response[F])(implicit A: Applicative[F]) = orF(A.pure(failure))
