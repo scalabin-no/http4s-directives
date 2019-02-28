@@ -17,25 +17,29 @@ object HttpClientProxy extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
     implicit val directives: Directives[IO] = Directives[IO]
-    val client = BlazeClientBuilder[IO](executionContext = ExecutionContext.global).resource
 
     val pathMapping = Plan[IO].PathMapping
 
-    val service = HttpRoutes.of {
-      pathMapping {
-        case "/flatMap" => directiveflatMap(getExample(client))
-        case "/"        => directiveFor(getExample(client))
-      }
-    }.orNotFound
+    def service(client: Client[IO]) =
+      HttpRoutes.of {
+        pathMapping {
+          case "/flatMap" => directiveflatMap(getExample(client))
+          case "/"        => directiveFor(getExample(client))
+        }
+      }.orNotFound
 
-    BlazeServerBuilder[IO].bindLocal(8080).withHttpApp(service).serve.compile.drain.as(ExitCode.Success)
+    val resources = for {
+      client <- BlazeClientBuilder[IO](executionContext = ExecutionContext.global).resource
+      _      <- BlazeServerBuilder[IO].bindLocal(8080).withHttpApp(service(client)).resource
+    } yield ()
+
+    resources
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
   }
 
-  def getExample(clientResource: Resource[IO, Client[IO]]): IO[Response[IO]] = {
-    clientResource.use( httpClient =>
-      httpClient.get("https://example.org/")(r => IO(r))
-    )
-  }
+  def getExample(httpClient: Client[IO]): IO[Response[IO]] =
+    httpClient.get("https://example.org/")(r => IO(r))
 
   type ValueDirective[F[_], A] = Directive[F, A]
   type ResponseDirective[F[_]] = ValueDirective[F, Response[F]]

@@ -23,20 +23,22 @@ object Main extends IOApp {
 
     val lm = LocalDateTime.now()
 
-    val service = HttpRoutes.of[IO] {
-      Mapping {
-        case Root / "hello" => {
-          for {
-            _   <- Method.GET
-            res <- Conditional.ifModifiedSinceF(lm, Ok("Hello World"))
-            foo <- request.queryParam[IO]("foo")
-            if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
-            //res <- Ok("Hello world")
-          } yield res
+    val service = HttpRoutes
+      .of[IO] {
+        Mapping {
+          case Root / "hello" => {
+            for {
+              _   <- Method.GET
+              res <- Conditional.ifModifiedSinceF(lm, Ok("Hello World"))
+              foo <- request.queryParam[IO]("foo")
+              if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
+              //res <- Ok("Hello world")
+            } yield res
+          }
         }
       }
-    }.orNotFound
+      .orNotFound
 
-    BlazeServerBuilder[IO].bindHttp(8080, "localhost").withHttpApp(service).serve.compile.drain.as(ExitCode.Success)
+    BlazeServerBuilder[IO].bindHttp(8080, "localhost").withHttpApp(service).resource.use(_ => IO.never).as(ExitCode.Success)
   }
 }
