@@ -44,7 +44,7 @@ val bodyService = HttpRoutes.of[IO] {
     case Root / "hello" => 
       for {
         _    <- Method.POST
-        body <- request.bodyAs[IO, String]
+        body <- request.bodyAs[String]
         r    <- Ok(s"echo $body").successF
       } yield r
   }
@@ -58,9 +58,9 @@ val queryParamService = HttpRoutes.of[IO] {
     case Root / "hello" => 
       for {
         _         <- Method.POST
-        name      <- request.queryParam[IO]("name")
-        items     <- request.queryParams[IO]("items")
-        nickname  <- request.queryParamOrElseF[IO]("nickname", BadRequest("missing nickname"))
+        name      <- request.queryParam("name")
+        items     <- request.queryParams("items")
+        nickname  <- request.queryParamOrElseF("nickname", BadRequest("missing nickname"))
         r         <- Ok(s"Hello $name($nickname): ${items.mkString(",")}").successF
       } yield r
   }

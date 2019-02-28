@@ -8,7 +8,6 @@ import org.http4s._
 import org.http4s.dsl.impl.Root
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 
 object Main extends IOApp {
@@ -29,8 +28,8 @@ object Main extends IOApp {
           case Root / "hello" => {
             for {
               _   <- Method.GET
-              res <- Conditional.ifModifiedSinceF(lm, Ok("Hello World"))
-              foo <- request.queryParam[IO]("foo")
+              res <- Conditional[IO].ifModifiedSinceF(lm, Ok("Hello World"))
+              foo <- request.queryParam("foo")
               if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
               //res <- Ok("Hello world")
             } yield res
