@@ -12,15 +12,19 @@ import org.http4s.util.CaseInsensitiveString
 import scala.language.higherKinds
 
 object Conditional {
-  type ResponseDirective[F[_]] = Directive[F, Response[F]]
+  def apply[F[_]]: Conditional[F] = new Conditional[F] {}
+}
 
-  private object request extends RequestOps
+trait Conditional[F[_]] {
+  type ResponseDirective = Directive[F, Response[F]]
 
-  def ifModifiedSince[F[_]: Monad](lm: LocalDateTime, orElse: => Response[F]): ResponseDirective[F] = {
-    ifModifiedSinceF(lm, Monad[F].pure(orElse))
+  object request extends RequestOps[F]
+
+  def ifModifiedSince(lm: LocalDateTime, orElse: => Response[F])(implicit M: Monad[F]): ResponseDirective = {
+    ifModifiedSinceF(lm, M.pure(orElse))
   }
 
-  def ifModifiedSinceF[F[_]: Monad](lm: LocalDateTime, orElse: F[Response[F]]): ResponseDirective[F] = {
+  def ifModifiedSinceF(lm: LocalDateTime, orElse: F[Response[F]])(implicit M: Monad[F]): ResponseDirective = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
       mod <- request.header(`If-Modified-Since`)
@@ -31,11 +35,11 @@ object Conditional {
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
-  def ifUnmodifiedSince[F[_]: Monad](lm: LocalDateTime, orElse: => Response[F]): ResponseDirective[F] = {
-    ifUnmodifiedSinceF(lm, Monad[F].pure(orElse))
+  def ifUnmodifiedSince(lm: LocalDateTime, orElse: => Response[F])(implicit M: Monad[F]): ResponseDirective = {
+    ifUnmodifiedSinceF(lm, M.pure(orElse))
   }
 
-  def ifUnmodifiedSinceF[F[_]: Monad](lm: LocalDateTime, orElse: F[Response[F]]): ResponseDirective[F] = {
+  def ifUnmodifiedSinceF(lm: LocalDateTime, orElse: F[Response[F]])(implicit M: Monad[F]): ResponseDirective = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
       mod <- request.header(IfUnmodifiedSince)
@@ -46,11 +50,11 @@ object Conditional {
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
-  def ifNoneMatch[F[_]: Monad](tag: ETag.EntityTag, orElse: => Response[F]): ResponseDirective[F] = {
+  def ifNoneMatch(tag: ETag.EntityTag, orElse: => Response[F])(implicit M: Monad[F]): ResponseDirective = {
     ifNoneMatchF(tag, Monad[F].pure(orElse))
   }
 
-  def ifNoneMatchF[F[_]: Monad](tag: ETag.EntityTag, orElse: F[Response[F]]): ResponseDirective[F] = {
+  def ifNoneMatchF(tag: ETag.EntityTag, orElse: F[Response[F]])(implicit M: Monad[F]): ResponseDirective = {
     for {
       mod <- request.header(`If-None-Match`)
       res <- mod
@@ -59,11 +63,11 @@ object Conditional {
     } yield res.putHeaders(ETag(tag))
   }
 
-  def ifMatch[F[_]: Monad](tag: ETag.EntityTag, orElse: => Response[F]): ResponseDirective[F] = {
-    ifMatchF(tag, Monad[F].pure(orElse))
+  def ifMatch(tag: ETag.EntityTag, orElse: => Response[F])(implicit M: Monad[F]): ResponseDirective = {
+    ifMatchF(tag, M.pure(orElse))
   }
 
-  def ifMatchF[F[_]: Monad](tag: ETag.EntityTag, orElse: F[Response[F]]): ResponseDirective[F] = {
+  def ifMatchF(tag: ETag.EntityTag, orElse: F[Response[F]])(implicit M: Monad[F]): ResponseDirective = {
     for {
       mod <- request.header(IfMatch)
       res <- mod
