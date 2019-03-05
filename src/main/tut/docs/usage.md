@@ -24,45 +24,39 @@ implicit val Direct: Directives[IO] = Directives[IO]
 import Direct._
 import ops._
 
-val Mapping = Plan[IO]().Mapping(req => Path(req.uri.path))
+val Mapping = Plan.default[IO].Mapping(req => Path(req.uri.path))
 
-val service = HttpRoutes.of[IO] {
-  Mapping {
-    case Root / "hello" => 
-      for {
-        _ <- Method.GET
-        r <- Ok("Hello World").successF
-      } yield r
-  }
+val service = Mapping {
+  case Root / "hello" => 
+    for {
+      _ <- Method.GET
+      r <- Ok("Hello World").successF
+    } yield r
 }
 ```
 
 ### Parsing body
 ```tut
-val bodyService = HttpRoutes.of[IO] {
-  Mapping {
-    case Root / "hello" => 
-      for {
-        _    <- Method.POST
-        body <- request.bodyAs[String]
-        r    <- Ok(s"echo $body").successF
-      } yield r
-  }
+val bodyService = Mapping {
+  case Root / "hello" => 
+    for {
+      _    <- Method.POST
+      body <- request.bodyAs[String]
+      r    <- Ok(s"echo $body").successF
+    } yield r
 }
 ```
 
 ### Query parameters
 ```tut
-val queryParamService = HttpRoutes.of[IO] {
-  Mapping {
-    case Root / "hello" => 
-      for {
-        _         <- Method.POST
-        name      <- request.queryParam("name")
-        items     <- request.queryParams("items")
-        nickname  <- request.queryParamOrElseF("nickname", BadRequest("missing nickname"))
-        r         <- Ok(s"Hello $name($nickname): ${items.mkString(",")}").successF
-      } yield r
-  }
+val queryParamService = Mapping {
+  case Root / "hello" => 
+    for {
+      _         <- Method.POST
+      name      <- request.queryParam("name")
+      items     <- request.queryParams("items")
+      nickname  <- request.queryParamOrElseF("nickname", BadRequest("missing nickname"))
+      r         <- Ok(s"Hello $name($nickname): ${items.mkString(",")}").successF
+    } yield r
 }
 ```

@@ -18,14 +18,12 @@ object HttpClientProxy extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     implicit val directives: Directives[IO] = Directives[IO]
 
-    val pathMapping = Plan[IO].PathMapping
+    val pathMapping = Plan.default[IO].PathMapping
 
     def service(client: Client[IO]) =
-      HttpRoutes.of {
-        pathMapping {
-          case "/flatMap" => directiveflatMap(getExample(client))
-          case "/"        => directiveFor(getExample(client))
-        }
+      pathMapping {
+        case "/flatMap" => directiveflatMap(getExample(client))
+        case "/"        => directiveFor(getExample(client))
       }.orNotFound
 
     val resources = for {

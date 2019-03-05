@@ -63,18 +63,16 @@ class DirectivesSpec extends FlatSpec with Matchers {
     import Direct._
     import ops._
 
-    val Mapping = Plan[IO]().Mapping(req => Path(req.uri.path))
+    val Mapping = Plan.default[IO].Mapping(req => Path(req.uri.path))
 
-    HttpRoutes.of {
-      Mapping {
-        case Root / "hello" =>
-          for {
-            _   <- Method.GET
-            res <- Conditional[IO].ifModifiedSinceF(lastModifiedTime, Ok("Hello World"))
-            foo <- request.queryParam("foo")
-            if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
-          } yield res
-      }
+    Mapping {
+      case Root / "hello" =>
+        for {
+          _   <- Method.GET
+          res <- Conditional[IO].ifModifiedSinceF(lastModifiedTime, Ok("Hello World"))
+          foo <- request.queryParam("foo")
+          if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
+        } yield res
     }
   }
 
