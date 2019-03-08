@@ -16,7 +16,7 @@ object Result {
 
   case class Error[F[_], A](value: Response[F]) extends Result[F, A]
 
-  implicit def monad[F[_]]: Monad[({ type X[A] = Result[F, A] })#X] = new Monad[({ type X[A] = Result[F, A] })#X] {
+  implicit def monad[F[_]]: Monad[Result[F, ?]] = new Monad[Result[F, ?]] {
 
     override def pure[A](x: A): Result[F, A] = Success(x)
 
@@ -32,7 +32,7 @@ object Result {
     }
   }
 
-  implicit def traverse[F[_]] = new Traverse[({ type X[A] = Result[F, A] })#X] {
+  implicit def traverse[F[_]]: Traverse[Result[F, ?]] = new Traverse[Result[F, ?]] {
     override def traverse[G[_], A, B](fa: Result[F, A])(f: A => G[B])(implicit G: Applicative[G]) =
       fa match {
         case Result.Success(value) => G.map(f(value))(Result.Success(_))

@@ -46,7 +46,7 @@ class Directives[F[_]: Monad] {
 
   def value[A](f: F[Result[A]]) = Directive[A](_ => f)
 
-  implicit def DirectiveMonad: Monad[({ type X[A] = Directive[A] })#X] = directives.Directive.monad[F]
+  implicit def DirectiveMonad: Monad[Directive[?]] = directives.Directive.monad[F]
 
   type when[A] = directives.when[F, A]
   val when = directives.when

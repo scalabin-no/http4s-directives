@@ -44,8 +44,8 @@ case class Directive[F[_]: Monad, A](run: Request[F] => F[Result[F, A]]) {
 
 object Directive {
 
-  implicit def monad[F[_]: Monad]: Monad[({ type X[A] = Directive[F, A] })#X] =
-    new Monad[({ type X[A] = Directive[F, A] })#X] {
+  implicit def monad[F[_]: Monad]: Monad[Directive[F, ?]] =
+    new Monad[Directive[F, ?]] {
       override def flatMap[A, B](fa: Directive[F, A])(f: A => Directive[F, B]): Directive[F, B] = fa flatMap f
 
       override def pure[A](a: A): Directive[F, A] = Directive[F, A](_ => Monad[F].pure(Result.success(a)))
