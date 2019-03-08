@@ -51,7 +51,7 @@ object Directive {
       override def pure[A](a: A): Directive[F, A] = Directive[F, A](_ => Monad[F].pure(Result.success(a)))
 
       override def tailRecM[A, B](a: A)(f: A => Directive[F, Either[A, B]]): Directive[F, B] =
-        tailRecM(a)(a0 => Directive(f(a0).run))
+        Directive(req => f(a).run(req).map(r => Result.monad[F].tailRecM(a)(_ => r)))
     }
 
   def request[F[_]: Monad]: Directive[F, Request[F]] = Directive(req => Monad[F].pure(Result.success(req)))
