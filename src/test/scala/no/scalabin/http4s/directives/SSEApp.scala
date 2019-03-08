@@ -16,21 +16,18 @@ object SSEApp extends IOApp {
     import directives._
     import ops._
 
-    val pathMapping = Plan[IO].PathMapping
+    val pathMapping = Plan.default[IO].PathMapping
 
-    val service = HttpRoutes
-      .of[IO] {
-        pathMapping {
-          case _ =>
-            for {
-              _   <- Method.GET
-              res <- Ok(events.map(e => ServerSentEvent(e.toString))).successF
-            } yield {
-              res
-            }
-        }
-      }
-      .orNotFound
+    val service =
+      pathMapping {
+        case _ =>
+          for {
+            _   <- Method.GET
+            res <- Ok(events.map(e => ServerSentEvent(e.toString))).successF
+          } yield {
+            res
+          }
+      }.orNotFound
 
     BlazeServerBuilder[IO].bindLocal(8080).withHttpApp(service).resource.use(_ => IO.never).as(ExitCode.Success)
   }

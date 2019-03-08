@@ -18,25 +18,22 @@ object Main extends IOApp {
     import Direct._
     import ops._
 
-    val Mapping = Plan[IO]().Mapping(req => Path(req.uri.path))
+    val Mapping = Plan.default[IO].Mapping(req => Path(req.uri.path))
 
     val lm = LocalDateTime.now()
 
-    val service = HttpRoutes
-      .of[IO] {
-        Mapping {
-          case Root / "hello" => {
-            for {
-              _   <- Method.GET
-              res <- Conditional[IO].ifModifiedSinceF(lm, Ok("Hello World"))
-              foo <- request.queryParam("foo")
-              if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
-              //res <- Ok("Hello world")
-            } yield res
-          }
+    val service =
+      Mapping {
+        case Root / "hello" => {
+          for {
+            _   <- Method.GET
+            res <- Conditional[IO].ifModifiedSinceF(lm, Ok("Hello World"))
+            foo <- request.queryParam("foo")
+            if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
+            //res <- Ok("Hello world")
+          } yield res
         }
-      }
-      .orNotFound
+      }.orNotFound
 
     BlazeServerBuilder[IO].bindHttp(8080, "localhost").withHttpApp(service).resource.use(_ => IO.never).as(ExitCode.Success)
   }
