@@ -22,7 +22,7 @@ libraryDependencies ++= Seq(
   "org.http4s"    %% "http4s-dsl"          % http4sVersion % "tut",
   "org.http4s"    %% "http4s-blaze-server" % http4sVersion % Test,
   "org.http4s"    %% "http4s-blaze-client" % http4sVersion % Test,
-  "org.scalatest" %% "scalatest"           % "3.0.6"       % Test
+  "org.scalatest" %% "scalatest"           % "3.0.7"       % Test
 )
 
 addCompilerPlugin("org.spire-math"  %% "kind-projector" % "0.9.9")
