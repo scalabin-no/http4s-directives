@@ -25,7 +25,7 @@ object Main extends IOApp {
             _   <- Method.GET
             res <- ifModifiedSinceDir(lm, Ok("Hello World"))
             foo <- request.queryParam("foo")
-            if foo.isDefined orDir BadRequest("You didn't provide a foo, you fool!")
+            if foo.isDefined or BadRequest("You didn't provide a foo, you fool!")
             //res <- Ok("Hello world")
           } yield res
         }

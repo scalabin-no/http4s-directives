@@ -18,10 +18,9 @@ trait DirectiveOps[F[_]] {
   }
 
   implicit class FilterSyntax(b: Boolean) {
-    def orF(failureF: F[Response[F]])(implicit M: Monad[F]): Directive.Filter[F] =
-      Directive.Filter(b, Directive.successF(failureF))
-    def or(failure: => Response[F])(implicit M: Monad[F]): Directive.Filter[F] = orDir(Directive.pure(failure))
-    def orDir(failure: Directive[F, Response[F]]): Directive.Filter[F]         = Directive.Filter(b, failure)
+    def orF(failureF: F[Response[F]])(implicit M: Monad[F]): Directive.Filter[F]  = or(Directive.successF(failureF))
+    def orRes(failure: => Response[F])(implicit M: Monad[F]): Directive.Filter[F] = or(Directive.pure(failure))
+    def or(failure: Directive[F, Response[F]]): Directive.Filter[F]               = Directive.Filter(b, failure)
   }
 
   implicit class MonadDecorator[X](f: F[X])(implicit sync: Monad[F]) {
@@ -31,6 +30,7 @@ trait DirectiveOps[F[_]] {
     def errorF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C]   = Directive.errorF(ev(f))
   }
 
+  //TODO: Consider having these as documentation and not as actual code in the library
   implicit class OptionDirectives[A](opt: Option[A])(implicit S: Monad[F]) {
     def toSuccess(failure: Directive[F, A]): Directive[F, A] = {
       opt match {
@@ -50,16 +50,12 @@ trait DirectiveOps[F[_]] {
   }
 
   implicit class EitherTDirectives[E, A](monad: EitherT[F, E, A])(implicit S: Monad[F]) {
-    def toSuccess(failure: E => Response[F]): Directive[F, A] =
-      Directive.resultF(monad.fold(e => Result.failure(failure(e)), Result.success))
-    def toSuccessDirective(failure: E => Directive[F, A]): Directive[F, A] =
+    def toSuccess(failure: E => Directive[F, A]): Directive[F, A] =
       Directive(req => monad.fold(failure, a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
   }
 
   implicit class OptionTDirectives[A](monad: OptionT[F, A])(implicit S: Monad[F]) {
-    def toSuccess(failure: => Response[F]): Directive[F, A] =
-      Directive.resultF(monad.fold(Result.failure[F, A](failure))(Result.success[F, A]))
-    def toSuccessDirective(failure: => Directive[F, A]): Directive[F, A] =
+    def toSuccess(failure: Directive[F, A]): Directive[F, A] =
       Directive(req => monad.fold(failure)(a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
   }
 }

@@ -8,10 +8,10 @@ import org.http4s._
 
 import scala.language.{higherKinds, implicitConversions}
 
-trait RequestDirectives[F[_]] {
+trait RequestDirectives[F[_]] extends WhenOps[F] {
 
   implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Monad[F]): Directive[F, Method] =
-    when[F, Method] { case req if eq.eqv(M, req.method) => M } orElse Response[F](Status.MethodNotAllowed)
+    when[Method] { case req if eq.eqv(M, req.method) => M } orElseRes Response[F](Status.MethodNotAllowed)
 
   implicit def liftHeaderDirective[KEY <: HeaderKey](K: KEY)(implicit sync: Monad[F]): Directive[F, Option[K.HeaderT]] =
     request.header(K)
