@@ -1,11 +1,11 @@
 package no.scalabin.http4s.directives
 
+import cats.Monad
 import cats.data.{EitherT, Kleisli, OptionT}
 import cats.effect.Sync
-import cats.{Applicative, Monad}
-import org.http4s.{HttpRoutes, Request, Response}
-import cats.syntax.functor._
 import cats.syntax.flatMap._
+import cats.syntax.functor._
+import org.http4s.{HttpRoutes, Request, Response}
 
 import scala.language.higherKinds
 
