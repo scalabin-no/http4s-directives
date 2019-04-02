@@ -5,7 +5,6 @@ import java.time.{LocalDateTime, ZoneOffset}
 import cats.effect._
 import org.http4s._
 import org.http4s.implicits._
-import org.http4s.dsl.impl.Root
 import org.http4s.dsl.io._
 import org.http4s.headers.`If-Modified-Since`
 import org.scalatest.{FlatSpec, Matchers}
@@ -59,9 +58,8 @@ class DirectivesSpec extends FlatSpec with Matchers {
   }
 
   private def createService(): HttpRoutes[IO] = {
-    implicit val Direct: Directives[IO] = Directives[IO]
-    import Direct._
-    import ops._
+    val dsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
+    import dsl._
 
     val Mapping = Plan.default[IO].Mapping(req => Path(req.uri.path))
 
@@ -69,9 +67,9 @@ class DirectivesSpec extends FlatSpec with Matchers {
       case Root / "hello" =>
         for {
           _   <- Method.GET
-          res <- Conditional[IO].ifModifiedSinceF(lastModifiedTime, Ok("Hello World"))
+          res <- ifModifiedSinceDir(lastModifiedTime, Ok("Hello World"))
           foo <- request.queryParam("foo")
-          if foo.isDefined orF BadRequest("You didn't provide a foo, you fool!")
+          if foo.isDefined orDir BadRequest("You didn't provide a foo, you fool!")
         } yield res
     }
   }

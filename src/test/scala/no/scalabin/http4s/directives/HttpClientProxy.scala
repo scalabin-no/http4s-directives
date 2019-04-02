@@ -16,15 +16,12 @@ import scala.language.higherKinds
 object HttpClientProxy extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
-    implicit val directives: Directives[IO] = Directives[IO]
+    implicit val dsl: DirectivesDsl[IO] = new DirectivesDsl[IO] with DirectiveDslOps[IO] {}
 
     val pathMapping = Plan.default[IO].PathMapping
 
     def service(client: Client[IO]) =
-      pathMapping {
-        case "/flatMap" => directiveflatMap(getExample(client))
-        case "/"        => directiveFor(getExample(client))
-      }.orNotFound
+      new Routes(client).httpRoutes.orNotFound
 
     val resources = for {
       client <- BlazeClientBuilder[IO](executionContext = ExecutionContext.global).resource
@@ -36,23 +33,27 @@ object HttpClientProxy extends IOApp {
       .as(ExitCode.Success)
   }
 
-  def getExample(httpClient: Client[IO]): IO[Response[IO]] =
-    httpClient.get("https://example.org/")(r => IO(r))
+  class Routes[F[_]: Sync](httpClient: Client[F]) extends DirectivesDsl[F] with DirectiveDslOps[F] {
+    private val pathMapping = Plan.default[F].PathMapping
 
-  type ValueDirective[F[_], A] = Directive[F, A]
-  type ResponseDirective[F[_]] = ValueDirective[F, Response[F]]
+    def getExample: F[Response[F]] =
+      httpClient.get("https://example.org/")(r => Sync[F].delay(r))
 
-  def directiveFor[F[_]: Monad](fRes: F[Response[F]])(implicit d: Directives[F]): ResponseDirective[F] = {
-    import d.ops._
-    for {
-      _   <- Method.GET
-      res <- fRes.successF
-    } yield { res }
-  }
+    def directiveFor(fRes: F[Response[F]]): ResponseDirective = {
+      for {
+        _   <- Method.GET
+        res <- fRes.successF
+      } yield { res }
+    }
 
-  def directiveflatMap[F[_]: Monad](res: F[Response[F]])(implicit d: Directives[F]): ResponseDirective[F] = {
-    import d.ops._
+    def directiveflatMap(res: F[Response[F]]): ResponseDirective = {
+      Method.GET.flatMap(_ => res.successF)
+    }
 
-    Method.GET.flatMap(_ => res.successF)
+    def httpRoutes =
+      pathMapping {
+        case "/flatMap" => directiveflatMap(getExample)
+        case "/"        => directiveFor(getExample)
+      }
   }
 }

@@ -25,7 +25,7 @@ case class Directive[F[_]: Monad, A](run: Request[F] => F[Result[F, A]]) {
       if (result.result)
         Directive.success[F, A](r)
       else
-        Directive.failureF[F, A](result.failure)
+        result.failure.flatMap(r => Directive.failure[F, A](r))
     }
 
   def withFilter(f: A => Directive.Filter[F]): Directive[F, A] = filter(f)
@@ -76,7 +76,7 @@ object Directive {
 
   def errorF[F[_]: Monad, A](f: F[Response[F]]): Directive[F, A] = Directive[F, A](_ => f.map(Result.Error[F, A]))
 
-  case class Filter[F[_]](result: Boolean, failure: F[Response[F]])
+  case class Filter[F[_]](result: Boolean, failure: Directive[F, Response[F]])
 
   object commit {
     def flatMap[F[_]: Monad, A](f: Unit => Directive[F, A]): Directive[F, A] =

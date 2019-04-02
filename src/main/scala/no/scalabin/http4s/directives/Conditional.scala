@@ -3,11 +3,8 @@ package no.scalabin.http4s.directives
 import java.time.{LocalDateTime, ZoneOffset}
 
 import cats.Monad
-import cats.data.{NonEmptyList, OptionT}
 import org.http4s._
 import org.http4s.headers._
-import org.http4s.parser.HttpHeaderParser
-import org.http4s.util.CaseInsensitiveString
 
 import scala.language.higherKinds
 
@@ -15,23 +12,24 @@ object Conditional {
   def apply[F[_]]: Conditional[F] = new Conditional[F] {}
 }
 
-trait Conditional[F[_]] {
+trait Conditional[F[_]] extends RequestDirectives[F] {
   type ResponseDirective = Directive[F, Response[F]]
-
-  object request extends RequestOps[F]
 
   def ifModifiedSince(lm: LocalDateTime, orElse: => Response[F])(implicit M: Monad[F]): ResponseDirective = {
     ifModifiedSinceF(lm, M.pure(orElse))
   }
 
   def ifModifiedSinceF(lm: LocalDateTime, orElse: F[Response[F]])(implicit M: Monad[F]): ResponseDirective = {
+    ifModifiedSinceDir(lm, Directive.successF[F, Response[F]](orElse))
+  }
+
+  def ifModifiedSinceDir(lm: LocalDateTime, orElse: ResponseDirective)(implicit M: Monad[F]): ResponseDirective = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
       mod <- request.header(`If-Modified-Since`)
       res <- mod
               .filter(_.date == date)
-              .fold(Directive.successF[F, Response[F]](orElse))(_ =>
-                Directive.failure[F, Response[F]](Response[F](Status.NotModified)))
+              .fold(orElse)(_ => Directive.failure[F, Response[F]](Response[F](Status.NotModified)))
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
@@ -40,13 +38,16 @@ trait Conditional[F[_]] {
   }
 
   def ifUnmodifiedSinceF(lm: LocalDateTime, orElse: F[Response[F]])(implicit M: Monad[F]): ResponseDirective = {
+    ifUnmodifiedSinceDir(lm, Directive.successF(orElse))
+  }
+
+  def ifUnmodifiedSinceDir(lm: LocalDateTime, orElse: ResponseDirective)(implicit M: Monad[F]): ResponseDirective = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
-      mod <- request.header(IfUnmodifiedSince)
+      mod <- request.header(`If-Unmodified-Since`)
       res <- mod
               .filter(_.date == date)
-              .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ =>
-                Directive.successF[F, Response[F]](orElse))
+              .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => orElse)
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
@@ -55,11 +56,15 @@ trait Conditional[F[_]] {
   }
 
   def ifNoneMatchF(tag: ETag.EntityTag, orElse: F[Response[F]])(implicit M: Monad[F]): ResponseDirective = {
+    ifNoneMatchDir(tag, Directive.successF(orElse))
+  }
+
+  def ifNoneMatchDir(tag: ETag.EntityTag, orElse: ResponseDirective)(implicit M: Monad[F]): ResponseDirective = {
     for {
       mod <- request.header(`If-None-Match`)
       res <- mod
               .filter(_.tags.exists(t => t.exists(_ == tag)))
-              .fold(Directive.successF(orElse))(_ => Directive.failure(Response[F](Status.NotModified)))
+              .fold(orElse)(_ => Directive.failure(Response[F](Status.NotModified)))
     } yield res.putHeaders(ETag(tag))
   }
 
@@ -68,45 +73,15 @@ trait Conditional[F[_]] {
   }
 
   def ifMatchF(tag: ETag.EntityTag, orElse: F[Response[F]])(implicit M: Monad[F]): ResponseDirective = {
+    ifMatchDir(tag, Directive.successF[F, Response[F]](orElse))
+  }
+
+  def ifMatchDir(tag: ETag.EntityTag, orElse: ResponseDirective)(implicit M: Monad[F]): ResponseDirective = {
     for {
-      mod <- request.header(IfMatch)
+      mod <- request.header(`If-Match`)
       res <- mod
               .filter(_.tags.exists(t => t.exists(_ == tag)))
-              .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ =>
-                Directive.successF[F, Response[F]](orElse))
+              .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => orElse)
     } yield res.putHeaders(ETag(tag))
   }
-}
-
-object IfMatch extends HeaderKey.Singleton {
-
-  override type HeaderT = `If-None-Match`.HeaderT
-
-  override val name: CaseInsensitiveString = CaseInsensitiveString("If-Match")
-
-  override def matchHeader(header: Header): Option[HeaderT] =
-    if (header.name == name) parse(header.value).right.toOption else None
-
-  /** Match any existing entity */
-  val `*` = `If-None-Match`(None)
-
-  def apply(first: ETag.EntityTag, rest: ETag.EntityTag*): `If-None-Match` = {
-    `If-None-Match`(Some(NonEmptyList(first, rest.toList)))
-  }
-
-  override def parse(s: String): ParseResult[HeaderT] =
-    HttpHeaderParser.IF_NONE_MATCH(s)
-}
-
-object IfUnmodifiedSince extends HeaderKey.Singleton {
-
-  override type HeaderT = `If-Modified-Since`.HeaderT
-
-  override def name: CaseInsensitiveString = CaseInsensitiveString("If-Unmodified-Since")
-
-  override def matchHeader(header: Header): Option[HeaderT] =
-    if (header.name == name) parse(header.value).right.toOption else None
-
-  override def parse(s: String): ParseResult[`If-Modified-Since`] =
-    HttpHeaderParser.IF_MODIFIED_SINCE(s)
 }

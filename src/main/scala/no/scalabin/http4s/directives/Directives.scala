@@ -6,10 +6,12 @@ import org.http4s._
 
 import scala.language.{higherKinds, implicitConversions}
 
+@deprecated("Use DirectivesDsl[F] instead")
 object Directives {
   def apply[F[_]](implicit M: Monad[F]): Directives[F] = new Directives[F]
 }
 
+@deprecated("Use DirectivesDsl[F] instead")
 class Directives[F[_]: Monad] {
 
   type Result[A] = directives.Result[F, A]

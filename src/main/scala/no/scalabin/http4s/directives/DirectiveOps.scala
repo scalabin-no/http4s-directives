@@ -18,8 +18,10 @@ trait DirectiveOps[F[_]] {
   }
 
   implicit class FilterSyntax(b: Boolean) {
-    def orF(failureF: F[Response[F]])                           = Directive.Filter(b, failureF)
-    def or(failure: => Response[F])(implicit A: Applicative[F]) = orF(A.pure(failure))
+    def orF(failureF: F[Response[F]])(implicit M: Monad[F]): Directive.Filter[F] =
+      Directive.Filter(b, Directive.successF(failureF))
+    def or(failure: => Response[F])(implicit M: Monad[F]): Directive.Filter[F] = orDir(Directive.pure(failure))
+    def orDir(failure: Directive[F, Response[F]]): Directive.Filter[F]         = Directive.Filter(b, failure)
   }
 
   implicit class MonadDecorator[X](f: F[X])(implicit sync: Monad[F]) {

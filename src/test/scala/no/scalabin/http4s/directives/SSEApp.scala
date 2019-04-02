@@ -4,7 +4,6 @@ import cats.effect._
 import cats.implicits._
 import fs2._
 import org.http4s._
-import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.blaze._
 
@@ -12,9 +11,8 @@ import scala.concurrent.duration._
 
 object SSEApp extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
-    val directives = Directives[IO]
-    import directives._
-    import ops._
+    val dsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
+    import dsl._
 
     val pathMapping = Plan.default[IO].PathMapping
 
@@ -23,7 +21,7 @@ object SSEApp extends IOApp {
         case _ =>
           for {
             _   <- Method.GET
-            res <- Ok(events.map(e => ServerSentEvent(e.toString))).successF
+            res <- Ok(events.map(e => ServerSentEvent(e.toString)))
           } yield {
             res
           }
