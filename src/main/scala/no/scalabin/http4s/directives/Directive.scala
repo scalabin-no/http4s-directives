@@ -98,6 +98,11 @@ object Directive {
     case None    => failureF(orElse)
   }
 
+  def getOrElse[F[_]: Monad, A](opt: Option[A], orElse: Directive[F, Response[F]]): Directive[F, A] = opt match {
+    case Some(r) => success(r)
+    case None    => orElse.flatMap(res => Directive.failure(res))
+  }
+
   def getOrElse[F[_]: Monad, A](opt: Option[A], orElse: => Response[F]): Directive[F, A] = opt match {
     case Some(r) => success(r)
     case None    => failure(orElse)
