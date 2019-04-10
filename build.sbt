@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest"           % "3.0.7"       % Test
 )
 
-addCompilerPlugin("org.spire-math"  %% "kind-projector" % "0.9.9")
+addCompilerPlugin("org.spire-math"  %% "kind-projector" % "0.9.10")
 
 micrositeName := "http4s-directives"
 micrositeDescription := "Directives for http4s"
