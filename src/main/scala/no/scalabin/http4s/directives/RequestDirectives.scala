@@ -36,10 +36,17 @@ trait RequestOps[F[_]] {
   def headerOrElseF[KEY <: HeaderKey](key: KEY, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, key.HeaderT] =
     header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
+  def headerOrElse[KEY <: HeaderKey](key: KEY, orElse: Directive[F, Response[F]])(
+      implicit M: Monad[F]): Directive[F, key.HeaderT] =
+    header(key).flatMap(opt => Directive.getOrElse(opt, orElse))
+
   def header(key: String)(implicit M: Monad[F]): Directive[F, Option[Header]] = headers.map(_.get(CaseInsensitiveString(key)))
 
   def headerOrElse(key: String, orElse: => Response[F])(implicit M: Monad[F]): Directive[F, Header] =
     headerOrElseF(key, M.pure(orElse))
+
+  def headerOrElse(key: String, orElse: Directive[F, Response[F]])(implicit M: Monad[F]): Directive[F, Header] =
+    header(key).flatMap(opt => Directive.getOrElse(opt, orElse))
 
   def headerOrElseF(key: String, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, Header] =
     header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
@@ -53,6 +60,9 @@ trait RequestOps[F[_]] {
   def cookiesOrElse(orElse: => Response[F])(implicit M: Monad[F]): Directive[F, NonEmptyList[RequestCookie]] =
     cookiesOrElseF(M.pure(orElse))
 
+  def cookiesOrElse(orElse: Directive[F, Response[F]])(implicit M: Monad[F]): Directive[F, NonEmptyList[RequestCookie]] =
+    cookies.flatMap(opt => Directive.getOrElse(opt, orElse))
+
   def cookiesOrElseF(orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, NonEmptyList[RequestCookie]] =
     cookies.flatMap(opt => Directive.getOrElseF(opt, orElse))
 
@@ -60,6 +70,9 @@ trait RequestOps[F[_]] {
     cookies.map(_.flatMap(_.find(c => c.name == name)))
 
   def cookieOrElse(name: String, orElse: => Response[F])(implicit M: Monad[F]): Directive[F, RequestCookie] =
+    cookie(name).flatMap(opt => Directive.getOrElse(opt, orElse))
+
+  def cookieOrElse(name: String, orElse: Directive[F, Response[F]])(implicit M: Monad[F]): Directive[F, RequestCookie] =
     cookie(name).flatMap(opt => Directive.getOrElse(opt, orElse))
 
   def cookieOrElseF(name: String, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, RequestCookie] =
@@ -74,10 +87,11 @@ trait RequestOps[F[_]] {
   def queryParamOrElse(name: String, orElse: => Response[F])(implicit M: Monad[F]): Directive[F, String] =
     queryParamOrElseF(name, M.pure(orElse))
 
+  def queryParamOrElse(name: String, orElse: Directive[F, Response[F]])(implicit M: Monad[F]): Directive[F, String] =
+    queryParam(name).flatMap(opt => Directive.getOrElse(opt, orElse))
+
   def queryParamOrElseF(name: String, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, String] =
-    queryParam(name).flatMap(
-      opt => Directive.getOrElseF(opt, orElse)
-    )
+    queryParam(name).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
   def bodyAs[A](implicit dec: EntityDecoder[F, A], M: Sync[F]): Directive[F, A] =
     bodyAs(_ => Response[F](Status.InternalServerError))
