@@ -6,17 +6,17 @@ import org.http4s.{Request, Response}
 import scala.language.higherKinds
 
 case class when[F[_]: Monad, A](pf: PartialFunction[Request[F], A]) {
-  def orElse[L](fail: Directive[F, Response[F]]): Directive[F, A] =
+  def orElse(fail: Directive[F, Response[F]]): Directive[F, A] =
     Directive.request.flatMap(req =>
       pf.lift(req) match {
         case Some(r) => Directive.pure(r)
         case None    => fail.flatMap(r => Directive.failure(r))
     })
 
-  def orElseRes[L](fail: => Response[F]): Directive[F, A] =
+  def orElseRes(fail: => Response[F]): Directive[F, A] =
     orElseF(Monad[F].pure(fail))
 
-  def orElseF[L](fail: F[Response[F]]): Directive[F, A] =
+  def orElseF(fail: F[Response[F]]): Directive[F, A] =
     orElse(Directive.successF(fail))
 }
 
