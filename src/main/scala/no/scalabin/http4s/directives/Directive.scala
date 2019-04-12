@@ -90,10 +90,14 @@ object Directive {
     }
   }
 
-  def getOrElseF[F[_]: Monad, A](opt: F[Option[A]], orElse: => F[Response[F]]): Directive[F, A] =
+  def getOrElseF[F[_]: Monad, A](opt: F[Option[A]], orElse: Directive[F, Response[F]]): Directive[F, A] =
+    Directive(req =>
+      OptionT(opt).cata(orElse.flatMap(Directive.failure[F, A](_)).run(req), v => Monad[F].pure(Result.success[F, A](v))).flatten)
+
+  def getOrElseF[F[_]: Monad, A](opt: F[Option[A]], orElse: F[Response[F]]): Directive[F, A] =
     Directive(_ => OptionT(opt).cata(orElse.map(Result.failure[F, A]), v => Monad[F].pure(Result.success[F, A](v))).flatten)
 
-  def getOrElseF[F[_]: Monad, A](opt: Option[A], orElse: => F[Response[F]]): Directive[F, A] = opt match {
+  def getOrElseF[F[_]: Monad, A](opt: Option[A], orElse: F[Response[F]]): Directive[F, A] = opt match {
     case Some(r) => success(r)
     case None    => failureF(orElse)
   }
