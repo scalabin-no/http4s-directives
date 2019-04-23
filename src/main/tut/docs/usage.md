@@ -12,17 +12,14 @@ position: 2
 import no.scalabin.http4s.directives._
 import cats.effect.IO
 import org.http4s._
-import org.http4s.dsl.io._
-import org.http4s.dsl.impl.Root
 ```
 
 ## Creating your first directive
 
 ```tut
-implicit val Direct: Directives[IO] = Directives[IO]
+implicit val dirDsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
 
-import Direct._
-import ops._
+import dirDsl._
 
 val Mapping = Plan.default[IO].Mapping(req => Path(req.uri.path))
 
@@ -30,7 +27,7 @@ val service = Mapping {
   case Root / "hello" => 
     for {
       _ <- Method.GET
-      r <- Ok("Hello World").successF
+      r <- Ok("Hello World")
     } yield r
 }
 ```
@@ -42,7 +39,7 @@ val bodyService = Mapping {
     for {
       _    <- Method.POST
       body <- request.bodyAs[String]
-      r    <- Ok(s"echo $body").successF
+      r    <- Ok(s"echo $body")
     } yield r
 }
 ```
@@ -55,8 +52,8 @@ val queryParamService = Mapping {
       _         <- Method.POST
       name      <- request.queryParam("name")
       items     <- request.queryParams("items")
-      nickname  <- request.queryParamOrElseF("nickname", BadRequest("missing nickname"))
-      r         <- Ok(s"Hello $name($nickname): ${items.mkString(",")}").successF
+      nickname  <- request.queryParamOrElse("nickname", BadRequest("missing nickname"))
+      r         <- Ok(s"Hello $name($nickname): ${items.mkString(",")}")
     } yield r
 }
 ```
