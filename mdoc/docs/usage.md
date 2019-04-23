@@ -8,7 +8,7 @@ position: 2
 
 ## Imports
 
-```tut:silent
+```scala mdoc:silent
 import no.scalabin.http4s.directives._
 import cats.effect.IO
 import org.http4s._
@@ -16,7 +16,7 @@ import org.http4s._
 
 ## Creating your first directive
 
-```tut
+```scala mdoc
 implicit val dirDsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
 
 import dirDsl._
@@ -33,7 +33,7 @@ val service = Mapping {
 ```
 
 ### Parsing body
-```tut
+```scala mdoc
 val bodyService = Mapping {
   case Root / "hello" => 
     for {
@@ -45,7 +45,7 @@ val bodyService = Mapping {
 ```
 
 ### Query parameters
-```tut
+```scala mdoc
 val queryParamService = Mapping {
   case Root / "hello" => 
     for {
