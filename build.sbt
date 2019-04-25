@@ -28,6 +28,7 @@ addCompilerPlugin("org.spire-math"  %% "kind-projector" % "0.9.10")
 
 mdocIn := baseDirectory.value / "mdoc" / "docs"
 
+mdocAutoDependency := false
 micrositeCompilingDocsTool := WithMdoc
 micrositeName := "http4s-directives"
 micrositeDescription := "Directives for http4s"
