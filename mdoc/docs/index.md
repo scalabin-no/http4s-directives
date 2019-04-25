@@ -33,7 +33,9 @@ To begin, add the following dependency to your SBT build file:
 
 | Http4s Version | Directives version | Status       |
 |----------------|--------------------|--------------|
-| 0.20.0-M7      | 0.7.0              | Current      |
+| 0.20.0         | 0.9.1              | Current      |
+| 0.20.0-RC1     | 0.8.0              | EOL          |
+| 0.20.0-M7      | 0.7.0              | EOL          |
 | 0.20.0-M6      | 0.20.0-M6-2        | EOL          |
 | 0.20.0-M5      | 0.20.0-M5-2        | EOL          |
 | 0.18.19        | 0.5.1              | EOL          |
