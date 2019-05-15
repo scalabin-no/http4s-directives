@@ -1,7 +1,7 @@
 package no.scalabin.http4s.directives
 
-import cats.data.OptionT
 import cats.Monad
+import cats.data.OptionT
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import org.http4s._
@@ -40,6 +40,7 @@ case class Directive[F[_]: Monad, A](run: Request[F] => F[Result[F, A]]) {
 
   def |(next: Directive[F, A]): Directive[F, A] = orElse(next)
 
+  def semiFlatMap[B](f: A => F[B]): Directive[F, B] = flatMap[B](a => Directive.liftF(f(a)))
 }
 
 object Directive {
