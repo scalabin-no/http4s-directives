@@ -17,9 +17,9 @@ trait DirectiveOps[F[_]] {
       HttpRoutes(req => OptionT.liftF(dir.run(req).map(_.response)))
   }
 
-  implicit class DirectiveResponseOps[A](dir: Directive[F, Response[F]])(implicit F: Monad[F]) {
-    def failure: Directive[F, Response[F]] = dir.flatMap(res => Directive.failure(res))
-    def error: Directive[F, Response[F]]   = dir.flatMap(res => Directive.error(res))
+  implicit class DirectiveResponseOps(dir: Directive[F, Response[F]])(implicit F: Monad[F]) {
+    def failure[A]: Directive[F, A] = dir.flatMap(res => Directive.failure(res))
+    def error[A]: Directive[F, A]   = dir.flatMap(res => Directive.error(res))
   }
 
   implicit class FilterSyntax(b: Boolean) {
