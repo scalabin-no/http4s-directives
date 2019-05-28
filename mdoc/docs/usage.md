@@ -21,10 +21,8 @@ implicit val dirDsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
 
 import dirDsl._
 
-val Mapping = Plan.default[IO].Mapping(req => Path(req.uri.path))
-
-val service = Mapping {
-  case Root / "hello" => 
+val service = DirectiveService[IO] {
+  case Path("hello") =>
     for {
       _ <- Method.GET
       r <- Ok("Hello World")
@@ -34,8 +32,8 @@ val service = Mapping {
 
 ### Parsing body
 ```scala mdoc
-val bodyService = Mapping {
-  case Root / "hello" => 
+val bodyService = DirectiveService[IO] {
+  case Path("hello") =>
     for {
       _    <- Method.POST
       body <- request.bodyAs[String]
@@ -46,8 +44,8 @@ val bodyService = Mapping {
 
 ### Query parameters
 ```scala mdoc
-val queryParamService = Mapping {
-  case Root / "hello" => 
+val queryParamService = DirectiveService[IO] {
+  case Path("hello") =>
     for {
       _         <- Method.POST
       name      <- request.queryParam("name")
