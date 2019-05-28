@@ -8,6 +8,7 @@ import org.http4s._
 
 import scala.language.higherKinds
 
+@deprecated(message = "Use DirectiveService instead", since = "0.11.0")
 object Plan {
   type Intent[F[_]] = PartialFunction[Request[F], Directive[F, Response[F]]]
 

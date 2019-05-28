@@ -18,7 +18,7 @@ class DirectivesSpec extends FlatSpec with Matchers {
 
   it should "respond with a ok response" in {
     val response = createService().orNotFound
-      .run(Request(method = Method.GET, uri = Uri.uri("/hello?foo=1")))
+      .run(Request(method = Method.GET, uri = uri"/hello?foo=1"))
       .unsafeRunSync()
 
     check(response = response, expectedHttpCode = Ok, expectedBody = Some("Hello World"))
@@ -27,7 +27,7 @@ class DirectivesSpec extends FlatSpec with Matchers {
   it should "respond with not modified response" in {
     val modified = `If-Modified-Since`(HttpDate.unsafeFromInstant(lastModifiedTime.toInstant(ZoneOffset.UTC)))
     val response = createService().orNotFound
-      .run(Request(method = Method.GET, uri = Uri.uri("/hello?foo=1"), headers = Headers.of(modified)))
+      .run(Request(method = Method.GET, uri = uri"/hello?foo=1", headers = Headers.of(modified)))
       .unsafeRunSync()
 
     check(response = response, expectedHttpCode = NotModified)
@@ -35,7 +35,7 @@ class DirectivesSpec extends FlatSpec with Matchers {
 
   it should "respond with a  bad request response" in {
     val response = createService().orNotFound
-      .run(Request(method = Method.GET, uri = Uri.uri("/hello")))
+      .run(Request(method = Method.GET, uri = uri"/hello"))
       .unsafeRunSync()
 
     check(response = response, expectedHttpCode = BadRequest, expectedBody = Some("You didn't provide a foo, you fool!"))
@@ -43,7 +43,7 @@ class DirectivesSpec extends FlatSpec with Matchers {
 
   it should "fallback to not found when not matching anything" in {
     val response = createService().orNotFound
-      .run(Request(method = Method.GET, uri = Uri.uri("/foobar")))
+      .run(Request(method = Method.GET, uri = uri"/foobar"))
       .unsafeRunSync()
 
     check(response = response, expectedHttpCode = NotFound)
@@ -61,10 +61,8 @@ class DirectivesSpec extends FlatSpec with Matchers {
     val dsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
     import dsl._
 
-    val Mapping = Plan.default[IO].Mapping(req => Path(req.uri.path))
-
-    Mapping {
-      case Root / "hello" =>
+    DirectiveService[IO] {
+      case Path("hello") =>
         for {
           _   <- Method.GET
           res <- ifModifiedSinceDir(lastModifiedTime, Ok("Hello World"))

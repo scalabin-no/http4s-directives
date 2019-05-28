@@ -18,8 +18,6 @@ object HttpClientProxy extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     implicit val dsl: DirectivesDsl[IO] = new DirectivesDsl[IO] with DirectiveDslOps[IO] {}
 
-    val pathMapping = Plan.default[IO].PathMapping
-
     def service(client: Client[IO]) =
       new Routes(client).httpRoutes.orNotFound
 
@@ -34,7 +32,6 @@ object HttpClientProxy extends IOApp {
   }
 
   class Routes[F[_]: Sync](httpClient: Client[F]) extends DirectivesDsl[F] with DirectiveDslOps[F] {
-    private val pathMapping = Plan.default[F].PathMapping
 
     def getExample: F[Response[F]] =
       httpClient.get("https://example.org/")(r => Sync[F].delay(r))
@@ -51,9 +48,9 @@ object HttpClientProxy extends IOApp {
     }
 
     def httpRoutes =
-      pathMapping {
-        case "/flatMap" => directiveflatMap(getExample)
-        case "/"        => directiveFor(getExample)
+      DirectiveService[F] {
+        case Path("flatMap") => directiveflatMap(getExample)
+        case Path()          => directiveFor(getExample)
       }
   }
 }

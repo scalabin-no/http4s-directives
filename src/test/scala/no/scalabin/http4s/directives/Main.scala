@@ -14,13 +14,13 @@ object Main extends IOApp {
     val dsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
     import dsl._
 
-    val Mapping = Plan.default[IO].Mapping(req => Path(req.uri.path))
+    //val Mapping = Plan.default[IO].Mapping(req => Path(req.uri.path))
 
     val lm = LocalDateTime.now()
 
     val service =
-      Mapping {
-        case Root / "hello" => {
+      DirectiveService[IO] {
+        case Path("hello") => {
           for {
             _   <- Method.GET
             res <- ifModifiedSinceDir(lm, Ok("Hello World"))

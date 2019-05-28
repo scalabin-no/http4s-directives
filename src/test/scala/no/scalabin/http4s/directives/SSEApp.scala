@@ -14,10 +14,8 @@ object SSEApp extends IOApp {
     val dsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
     import dsl._
 
-    val pathMapping = Plan.default[IO].PathMapping
-
     val service =
-      pathMapping {
+      DirectiveService[IO] {
         case _ =>
           for {
             _   <- Method.GET
