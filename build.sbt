@@ -1,6 +1,6 @@
 import microsites.MicrositesPlugin.autoImport.{micrositeCompilingDocsTool, micrositeDescription}
 
-val http4sVersion = "0.20.1"
+val http4sVersion = "0.20.2"
 
 inThisBuild(
   Seq(
