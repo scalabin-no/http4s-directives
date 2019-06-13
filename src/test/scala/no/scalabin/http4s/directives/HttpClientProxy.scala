@@ -48,7 +48,7 @@ object HttpClientProxy extends IOApp {
     }
 
     def httpRoutes =
-      DirectiveService[F] {
+      DirectiveRoutes[F] {
         case Path("flatMap") => directiveflatMap(getExample)
         case Path()          => directiveFor(getExample)
       }

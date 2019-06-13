@@ -15,7 +15,7 @@ object SSEApp extends IOApp {
     import dsl._
 
     val service =
-      DirectiveService[IO] {
+      DirectiveRoutes[IO] {
         case _ =>
           for {
             _   <- Method.GET

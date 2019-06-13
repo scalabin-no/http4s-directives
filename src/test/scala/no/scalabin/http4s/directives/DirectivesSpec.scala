@@ -61,7 +61,7 @@ class DirectivesSpec extends FlatSpec with Matchers {
     val dsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
     import dsl._
 
-    DirectiveService[IO] {
+    DirectiveRoutes[IO] {
       case Path("hello") =>
         for {
           _   <- Method.GET

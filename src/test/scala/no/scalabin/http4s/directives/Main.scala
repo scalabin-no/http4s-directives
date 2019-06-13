@@ -19,7 +19,7 @@ object Main extends IOApp {
     val lm = LocalDateTime.now()
 
     val service =
-      DirectiveService[IO] {
+      DirectiveRoutes[IO] {
         case Path("hello") => {
           for {
             _   <- Method.GET
