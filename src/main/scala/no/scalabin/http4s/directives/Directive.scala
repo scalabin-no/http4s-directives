@@ -1,6 +1,7 @@
 package no.scalabin.http4s.directives
 
 import cats.Monad
+import cats.arrow.FunctionK
 import cats.data.OptionT
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -54,6 +55,10 @@ object Directive {
       override def tailRecM[A, B](a: A)(f: A => Directive[F, Either[A, B]]): Directive[F, B] =
         Directive(req => f(a).run(req).map(r => Result.monad[F].tailRecM(a)(_ => r)))
     }
+
+  implicit def naturalTransformation[F[_]: Monad]: FunctionK[F, Directive[F, ?]] = new FunctionK[F, Directive[F, ?]] {
+    override def apply[A](fa: F[A]): Directive[F, A] = liftF(fa)
+  }
 
   def request[F[_]: Monad]: Directive[F, Request[F]] = Directive(req => Monad[F].pure(Result.success(req)))
 
