@@ -25,7 +25,7 @@ inThisBuild(
 
 lazy val root = (project in file(".")).settings(
   name := "http4s-directives",
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10")
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.0")
 )
 
 lazy val mdoc = (project in file("mdoc"))
