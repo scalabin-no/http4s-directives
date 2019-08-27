@@ -33,6 +33,7 @@ trait DirectiveOps[F[_]] {
     def successF: Directive[F, X]                                          = Directive.successF(f)
     def failureF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C] = Directive.failureF(ev(f))
     def errorF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C]   = Directive.errorF(ev(f))
+    def liftF: Directive[F, X]                                             = Directive.liftF(f)
   }
 
   //TODO: Consider having these as documentation and not as actual code in the library
