@@ -6,8 +6,6 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import org.http4s._
 
-import scala.language.{higherKinds, reflectiveCalls}
-
 case class Directive[F[_]: Monad, A](run: Request[F] => F[Result[F, A]]) {
   def flatMap[B](f: A => Directive[F, B]): Directive[F, B] =
     Directive[F, B](req =>
@@ -45,8 +43,8 @@ case class Directive[F[_]: Monad, A](run: Request[F] => F[Result[F, A]]) {
 
 object Directive {
 
-  implicit def monad[F[_]: Monad]: Monad[Directive[F, ?]] =
-    new Monad[Directive[F, ?]] {
+  implicit def monad[F[_]: Monad]: Monad[Directive[F, *]] =
+    new Monad[Directive[F, *]] {
       override def flatMap[A, B](fa: Directive[F, A])(f: A => Directive[F, B]): Directive[F, B] = fa flatMap f
 
       override def pure[A](a: A): Directive[F, A] = Directive[F, A](_ => Monad[F].pure(Result.success(a)))

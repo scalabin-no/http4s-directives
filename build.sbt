@@ -12,7 +12,8 @@ inThisBuild(
       "-deprecation",
       "-unchecked",
       "-encoding",
-      "utf-8"
+      "utf-8",
+      "-language:higherKinds"
     ),
     libraryDependencies ++= Seq(
       "org.http4s"    %% "http4s-core"         % http4sVersion,

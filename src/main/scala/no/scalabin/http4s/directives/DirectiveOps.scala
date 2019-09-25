@@ -7,8 +7,6 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import org.http4s.{HttpRoutes, Request, Response}
 
-import scala.language.higherKinds
-
 trait DirectiveOps[F[_]] {
   implicit class DirectiveKleisli[A](dir: Directive[F, A])(implicit F: Sync[F]) {
     def kleisli: Kleisli[F, Request[F], Result[F, A]] = Kleisli(dir.run)

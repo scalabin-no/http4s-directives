@@ -3,8 +3,6 @@ package no.scalabin.http4s.directives
 import cats.{Applicative, Eval, Monad, Traverse}
 import org.http4s.Response
 
-import scala.language.{higherKinds, reflectiveCalls}
-
 object Result {
   def success[F[_], A](a: A): Result[F, A]           = Success(a)
   def failure[F[_], A](a: Response[F]): Result[F, A] = Failure(a)
@@ -16,7 +14,7 @@ object Result {
 
   case class Error[F[_], A](value: Response[F]) extends Result[F, A]
 
-  implicit def monad[F[_]]: Monad[Result[F, ?]] = new Monad[Result[F, ?]] {
+  implicit def monad[F[_]]: Monad[Result[F, *]] = new Monad[Result[F, *]] {
 
     override def pure[A](x: A): Result[F, A] = Success(x)
 
@@ -32,7 +30,7 @@ object Result {
     }
   }
 
-  implicit def traverse[F[_]]: Traverse[Result[F, ?]] = new Traverse[Result[F, ?]] {
+  implicit def traverse[F[_]]: Traverse[Result[F, *]] = new Traverse[Result[F, *]] {
     override def traverse[G[_], A, B](fa: Result[F, A])(f: A => G[B])(implicit G: Applicative[G]) =
       fa match {
         case Result.Success(value) => G.map(f(value))(Result.Success(_))
