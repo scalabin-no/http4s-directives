@@ -1,13 +1,9 @@
-import microsites.MicrositesPlugin.autoImport.{micrositeCompilingDocsTool, micrositeDescription}
-import sbt.CrossVersion
-
-
-val http4sVersion = "0.21.0-M4"
+val http4sVersion = "0.21.0-M5"
 
 inThisBuild(
   Seq(
     organization := "no.scalabin.http4s",
-    crossScalaVersions := Seq("2.13.0", "2.12.10"),
+    crossScalaVersions := Seq("2.13.1", "2.12.10"),
     scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= Seq(
       "-feature",
