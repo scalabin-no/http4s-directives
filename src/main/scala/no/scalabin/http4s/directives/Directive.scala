@@ -8,6 +8,9 @@ import cats.syntax.functor._
 import org.http4s._
 
 case class Directive[F[_]: Monad, A, R](run: A => F[Result[F, R]]) {
+  def local[AA](f: AA => A): Directive[F, AA, R] =
+    Directive(f.andThen(run))
+
   def flatMap[B](f: R => Directive[F, A, B]): Directive[F, A, B] =
     Directive[F, A, B](req =>
       run(req).flatMap {
