@@ -6,7 +6,7 @@ import cats.effect.Sync
 import org.http4s.util.CaseInsensitiveString
 import org.http4s._
 
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 
 trait RequestDirectives[F[_]] extends WhenOps[F] {
 

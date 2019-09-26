@@ -1,19 +1,21 @@
 import microsites.MicrositesPlugin.autoImport.{micrositeCompilingDocsTool, micrositeDescription}
 import sbt.CrossVersion
 
+
 val http4sVersion = "0.21.0-M4"
 
 inThisBuild(
   Seq(
     organization := "no.scalabin.http4s",
-    crossScalaVersions := Seq("2.13.0", "2.12.9"),
+    crossScalaVersions := Seq("2.13.0", "2.12.10"),
     scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= Seq(
       "-feature",
       "-deprecation",
       "-unchecked",
       "-encoding",
-      "utf-8"
+      "utf-8",
+      "-language:higherKinds"
     ),
     libraryDependencies ++= Seq(
       "org.http4s"    %% "http4s-core"         % http4sVersion,

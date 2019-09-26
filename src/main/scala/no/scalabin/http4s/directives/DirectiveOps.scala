@@ -1,21 +1,11 @@
 package no.scalabin.http4s.directives
 
 import cats.Monad
-import cats.data.{EitherT, Kleisli, OptionT}
-import cats.effect.Sync
+import cats.data.{EitherT, OptionT}
 import cats.syntax.flatMap._
-import cats.syntax.functor._
-import org.http4s.{HttpRoutes, Request, Response}
-
-import scala.language.higherKinds
+import org.http4s.Response
 
 trait DirectiveOps[F[_]] {
-  implicit class DirectiveKleisli[A](dir: Directive[F, A])(implicit F: Sync[F]) {
-    def kleisli: Kleisli[F, Request[F], Result[F, A]] = Kleisli(dir.run)
-
-    def toHttpRoutes(implicit ev: A =:= Response[F]): HttpRoutes[F] =
-      HttpRoutes(req => OptionT.liftF(dir.run(req).map(_.response)))
-  }
 
   implicit class DirectiveResponseOps(dir: Directive[F, Response[F]])(implicit F: Monad[F]) {
     def failure[A]: Directive[F, A] = dir.flatMap(res => Directive.failure(res))

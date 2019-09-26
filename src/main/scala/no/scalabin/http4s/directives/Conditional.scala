@@ -6,8 +6,6 @@ import cats.Monad
 import org.http4s._
 import org.http4s.headers._
 
-import scala.language.higherKinds
-
 object Conditional {
   def apply[F[_]]: Conditional[F] = new Conditional[F] {}
 }

@@ -14,8 +14,6 @@ object Main extends IOApp {
     val dsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
     import dsl._
 
-    //val Mapping = Plan.default[IO].Mapping(req => Path(req.uri.path))
-
     val lm = LocalDateTime.now()
 
     val service =

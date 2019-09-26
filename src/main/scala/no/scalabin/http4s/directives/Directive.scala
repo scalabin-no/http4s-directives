@@ -2,11 +2,10 @@ package no.scalabin.http4s.directives
 
 import cats.Monad
 import cats.data.OptionT
+import cats.effect.Sync
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import org.http4s._
-
-import scala.language.{higherKinds, reflectiveCalls}
 
 case class Directive[F[_]: Monad, A](run: Request[F] => F[Result[F, A]]) {
   def flatMap[B](f: A => Directive[F, B]): Directive[F, B] =
@@ -41,12 +40,15 @@ case class Directive[F[_]: Monad, A](run: Request[F] => F[Result[F, A]]) {
   def |(next: Directive[F, A]): Directive[F, A] = orElse(next)
 
   def semiFlatMap[B](f: A => F[B]): Directive[F, B] = flatMap[B](a => Directive.liftF(f(a)))
+
+  def toHttpRoutes(implicit ev: A =:= Response[F], S: Sync[F]): HttpRoutes[F] =
+    HttpRoutes(req => OptionT.liftF(run(req).map(_.response)))
 }
 
 object Directive {
 
-  implicit def monad[F[_]: Monad]: Monad[Directive[F, ?]] =
-    new Monad[Directive[F, ?]] {
+  implicit def monad[F[_]: Monad]: Monad[Directive[F, *]] =
+    new Monad[Directive[F, *]] {
       override def flatMap[A, B](fa: Directive[F, A])(f: A => Directive[F, B]): Directive[F, B] = fa flatMap f
 
       override def pure[A](a: A): Directive[F, A] = Directive[F, A](_ => Monad[F].pure(Result.success(a)))
