@@ -42,7 +42,7 @@ case class Directive[F[_]: Monad, A, R](run: A => F[Result[F, R]]) {
   def semiFlatMap[B](f: R => F[B]): Directive[F, A, B] = flatMap[B](a => Directive.liftF(f(a)))
 
   def toHttpRoutes(implicit evA: Request[F] =:= A, evR: R =:= Response[F], S: Sync[F]): HttpRoutes[F] =
-    HttpRoutes(req => OptionT.liftF(run(evA(req)).map(_.response)))
+    HttpRoutes(req => OptionT.liftF(run(req).map(_.response)))
 }
 
 object Directive {
