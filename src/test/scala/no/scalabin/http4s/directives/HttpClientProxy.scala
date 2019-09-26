@@ -11,7 +11,6 @@ import org.http4s.implicits._
 import org.http4s.server.blaze._
 
 import scala.concurrent.ExecutionContext
-import scala.language.higherKinds
 
 object HttpClientProxy extends IOApp {
 
@@ -36,14 +35,14 @@ object HttpClientProxy extends IOApp {
     def getExample: F[Response[F]] =
       httpClient.get("https://example.org/")(r => Sync[F].delay(r))
 
-    def directiveFor(fRes: F[Response[F]]): ResponseDirective = {
+    def directiveFor(fRes: F[Response[F]]): ResponseDirective[F] = {
       for {
         _   <- Method.GET
         res <- fRes.successF
       } yield { res }
     }
 
-    def directiveflatMap(res: F[Response[F]]): ResponseDirective = {
+    def directiveflatMap(res: F[Response[F]]): ResponseDirective[F] = {
       Method.GET.flatMap(_ => res.successF)
     }
 

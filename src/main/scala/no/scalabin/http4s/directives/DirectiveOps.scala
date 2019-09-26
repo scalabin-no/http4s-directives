@@ -7,27 +7,27 @@ import org.http4s.Response
 
 trait DirectiveOps[F[_]] {
 
-  implicit class DirectiveResponseOps(dir: Directive[F, Response[F]])(implicit F: Monad[F]) {
-    def failure[A]: Directive[F, A] = dir.flatMap(res => Directive.failure(res))
-    def error[A]: Directive[F, A]   = dir.flatMap(res => Directive.error(res))
+  implicit class DirectiveResponseOps(dir: ResponseDirective[F])(implicit F: Monad[F]) {
+    def failure[A]: RequestDirective[F, A] = dir.flatMap(res => Directive.failure(res))
+    def error[A]: RequestDirective[F, A]   = dir.flatMap(res => Directive.error(res))
   }
 
-  implicit class FilterSyntax(b: Boolean) {
-    def orF(failureF: F[Response[F]])(implicit M: Monad[F]): Directive.Filter[F]  = or(Directive.successF(failureF))
-    def orRes(failure: => Response[F])(implicit M: Monad[F]): Directive.Filter[F] = or(Directive.pure(failure))
-    def or(failure: Directive[F, Response[F]]): Directive.Filter[F]               = Directive.Filter(b, failure)
+  implicit class FilterSyntax[A](b: Boolean) {
+    def orF(failureF: F[Response[F]])(implicit M: Monad[F]): Directive.Filter[F, A]  = or(Directive.successF(failureF))
+    def orRes(failure: => Response[F])(implicit M: Monad[F]): Directive.Filter[F, A] = or(Directive.pure(failure))
+    def or(failure: Directive[F, A, Response[F]]): Directive.Filter[F, A]            = Directive.Filter(b, failure)
   }
 
-  implicit class MonadDecorator[X](f: F[X])(implicit sync: Monad[F]) {
+  implicit class MonadDecorator[A, X](f: F[X])(implicit sync: Monad[F]) {
 
-    def successF: Directive[F, X]                                          = Directive.successF(f)
-    def failureF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C] = Directive.failureF(ev(f))
-    def errorF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C]   = Directive.errorF(ev(f))
-    def liftF: Directive[F, X]                                             = Directive.liftF(f)
+    def successF: Directive[F, A, X]                                          = Directive.successF(f)
+    def failureF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, A, C] = Directive.failureF(ev(f))
+    def errorF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, A, C]   = Directive.errorF(ev(f))
+    def liftF: Directive[F, A, X]                                             = Directive.liftF(f)
   }
 
   //TODO: Consider having these as documentation and not as actual code in the library
-  implicit class OptionDirectives[A](opt: Option[A])(implicit S: Monad[F]) {
+  /*implicit class OptionDirectives[A](opt: Option[A])(implicit S: Monad[F]) {
     def toSuccess(failure: Directive[F, A]): Directive[F, A] = {
       opt match {
         case Some(a) => Directive.success(a)
@@ -53,5 +53,5 @@ trait DirectiveOps[F[_]] {
   implicit class OptionTDirectives[A](monad: OptionT[F, A])(implicit S: Monad[F]) {
     def toSuccess(failure: Directive[F, A]): Directive[F, A] =
       Directive(req => monad.fold(failure)(a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
-  }
+  }*/
 }
