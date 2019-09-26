@@ -1,11 +1,13 @@
 import microsites.MicrositesPlugin.autoImport.{micrositeCompilingDocsTool, micrositeDescription}
+import sbt.CrossVersion
 
-val http4sVersion = "0.20.11"
+
+val http4sVersion = "0.21.0-M4"
 
 inThisBuild(
   Seq(
     organization := "no.scalabin.http4s",
-    crossScalaVersions := Seq("2.12.10", "2.11.12"),
+    crossScalaVersions := Seq("2.13.0", "2.12.10"),
     scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= Seq(
       "-feature",
@@ -26,7 +28,12 @@ inThisBuild(
 
 lazy val root = (project in file(".")).settings(
   name := "http4s-directives",
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10")
+  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.10.3" cross CrossVersion.binary),
+  scalacOptions ++= (
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, v)) if v <= 12 => Seq("-Ypartial-unification")
+      case _ => Seq.empty
+    })
 )
 
 lazy val mdoc = (project in file("mdoc"))

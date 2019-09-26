@@ -67,7 +67,7 @@ class DirectivesSpec extends FlatSpec with Matchers {
           _   <- Method.GET
           res <- ifModifiedSinceDir(lastModifiedTime, Ok("Hello World"))
           foo <- request.queryParam("foo")
-          if foo.isDefined or BadRequest(IO("You didn't provide a foo, you fool!"))
+          if foo.isDefined or BadRequest("You didn't provide a foo, you fool!")
         } yield res
     }
   }
