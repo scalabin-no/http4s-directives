@@ -1,6 +1,6 @@
 package no.scalabin.http4s.directives
 
-import cats.{Monad, ~>}
+import cats.{~>, Monad}
 import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.flatMap._
@@ -9,12 +9,14 @@ import org.http4s._
 
 case class Directive[F[_]: Monad, A](run: Request[F] => F[Result[F, A]]) {
   def flatMap[B](f: A => Directive[F, B]): Directive[F, B] =
-    Directive[F, B](req =>
-      run(req).flatMap {
-        case Result.Success(value) => f(value).run(req)
-        case Result.Failure(value) => Monad[F].pure(Result.failure(value))
-        case Result.Error(value)   => Monad[F].pure(Result.error(value))
-    })
+    Directive[F, B](
+      req =>
+        run(req).flatMap {
+          case Result.Success(value) => f(value).run(req)
+          case Result.Failure(value) => Monad[F].pure(Result.failure(value))
+          case Result.Error(value)   => Monad[F].pure(Result.error(value))
+        }
+    )
 
   def map[B](f: A => B): Directive[F, B] = Directive[F, B](req => run(req).map(_.map(f)))
 
@@ -30,12 +32,14 @@ case class Directive[F[_]: Monad, A](run: Request[F] => F[Result[F, A]]) {
   def withFilter(f: A => Directive.Filter[F]): Directive[F, A] = filter(f)
 
   def orElse(next: Directive[F, A]): Directive[F, A] =
-    Directive[F, A](req =>
-      run(req).flatMap {
-        case Result.Success(value) => Monad[F].pure(Result.success(value))
-        case Result.Failure(_)     => next.run(req)
-        case Result.Error(value)   => Monad[F].pure(Result.error(value))
-    })
+    Directive[F, A](
+      req =>
+        run(req).flatMap {
+          case Result.Success(value) => Monad[F].pure(Result.success(value))
+          case Result.Failure(_)     => next.run(req)
+          case Result.Error(value)   => Monad[F].pure(Result.error(value))
+        }
+    )
 
   def |(next: Directive[F, A]): Directive[F, A] = orElse(next)
 
@@ -98,8 +102,12 @@ object Directive {
   }
 
   def getOrElseF[F[_]: Monad, A](opt: F[Option[A]], orElse: Directive[F, Response[F]]): Directive[F, A] =
-    Directive(req =>
-      OptionT(opt).cata(orElse.flatMap(Directive.failure[F, A](_)).run(req), v => Monad[F].pure(Result.success[F, A](v))).flatten)
+    Directive(
+      req =>
+        OptionT(opt)
+          .cata(orElse.flatMap(Directive.failure[F, A](_)).run(req), v => Monad[F].pure(Result.success[F, A](v)))
+          .flatten
+    )
 
   def getOrElseF[F[_]: Monad, A](opt: F[Option[A]], orElse: F[Response[F]]): Directive[F, A] =
     Directive(_ => OptionT(opt).cata(orElse.map(Result.failure[F, A]), v => Monad[F].pure(Result.success[F, A](v))).flatten)

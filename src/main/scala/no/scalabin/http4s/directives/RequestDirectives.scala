@@ -95,12 +95,15 @@ trait RequestOps[F[_]] {
   def queryParamOrElseF(name: String, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, String] =
     queryParam(name).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
-  def as[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] = Directive(_.as[A].map(Result.success))
+  def as[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] =
+    Directive(_.as[A].map(Result.success))
 
   def bodyAs[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] =
     bodyAs(_ => Response[F](Status.InternalServerError))
 
-  def bodyAs[A](onError: DecodeFailure => Response[F])(implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] = {
+  def bodyAs[A](
+      onError: DecodeFailure => Response[F]
+  )(implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] = {
     Directive(
       req =>
         req

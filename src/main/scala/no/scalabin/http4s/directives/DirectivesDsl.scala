@@ -1,6 +1,6 @@
 package no.scalabin.http4s.directives
 
-import cats.{Monad, ~>}
+import cats.{~>, Monad}
 import org.http4s.dsl.Http4sDsl2
 
 abstract class DirectivesDsl[F[_]: Monad] extends Http4sDsl2[Directive[F, *], F] {
