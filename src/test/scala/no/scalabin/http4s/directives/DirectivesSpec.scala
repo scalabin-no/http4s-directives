@@ -7,11 +7,12 @@ import org.http4s._
 import org.http4s.implicits._
 import org.http4s.dsl.io._
 import org.http4s.headers.`If-Modified-Since`
-import org.scalatest.{FlatSpec, Matchers}
 
 import scala.concurrent.ExecutionContext
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class DirectivesSpec extends FlatSpec with Matchers {
+class DirectivesSpec extends AnyFlatSpec with Matchers {
   private val lastModifiedTime = LocalDateTime.now()
 
   implicit def contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
