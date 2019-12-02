@@ -5,9 +5,10 @@ import cats.implicits._
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class DirectiveHttp4sWrapperSpec extends FlatSpec with Matchers {
+class DirectiveHttp4sWrapperSpec extends AnyFlatSpec with Matchers {
   it should "respond with a ok response for /foo" in {
     val response = myService.run(Request(method = Method.GET, uri = uri"/foo"))
 

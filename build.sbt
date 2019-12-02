@@ -18,7 +18,7 @@ inThisBuild(
       "org.http4s"    %% "http4s-dsl"          % http4sVersion,
       "org.http4s"    %% "http4s-blaze-server" % http4sVersion % Test,
       "org.http4s"    %% "http4s-blaze-client" % http4sVersion % Test,
-      "org.scalatest" %% "scalatest"           % "3.0.8" % Test
+      "org.scalatest" %% "scalatest"           % "3.1.0" % Test
     )
   ))
 
