@@ -1,6 +1,7 @@
 package no.scalabin.http4s.directives
 
-import cats.{Eq, Monad}
+import cats.syntax.functor._
+import cats.{Eq, Monad, MonadError}
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import org.http4s.util.CaseInsensitiveString
@@ -37,7 +38,8 @@ trait RequestOps[F[_]] {
     header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
   def headerOrElse[KEY <: HeaderKey](key: KEY, orElse: Directive[F, Response[F]])(
-      implicit M: Monad[F]): Directive[F, key.HeaderT] =
+      implicit M: Monad[F]
+  ): Directive[F, key.HeaderT] =
     header(key).flatMap(opt => Directive.getOrElse(opt, orElse))
 
   def header(key: String)(implicit M: Monad[F]): Directive[F, Option[Header]] = headers.map(_.get(CaseInsensitiveString(key)))
@@ -93,10 +95,12 @@ trait RequestOps[F[_]] {
   def queryParamOrElseF(name: String, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, String] =
     queryParam(name).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
-  def bodyAs[A](implicit dec: EntityDecoder[F, A], M: Sync[F]): Directive[F, A] =
+  def as[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] = Directive(_.as[A].map(Result.success))
+
+  def bodyAs[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] =
     bodyAs(_ => Response[F](Status.InternalServerError))
 
-  def bodyAs[A](onError: DecodeFailure => Response[F])(implicit dec: EntityDecoder[F, A], M: Sync[F]): Directive[F, A] = {
+  def bodyAs[A](onError: DecodeFailure => Response[F])(implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] = {
     Directive(
       req =>
         req
@@ -104,7 +108,7 @@ trait RequestOps[F[_]] {
           .fold(
             e => Result.failure(onError(e)),
             Result.success
-        )
+          )
     )
   }
 }
