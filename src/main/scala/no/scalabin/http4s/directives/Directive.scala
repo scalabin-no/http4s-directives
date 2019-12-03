@@ -61,7 +61,7 @@ object Directive {
         Directive(req => f(a).run(req).map(r => Result.monad[F].tailRecM(a)(_ => r)))
     }
 
-  def applyK[F[_]: Monad]: F ~> Directive[F, *] = new ~>[F, Directive[F, *]] {
+  def liftK[F[_]: Monad]: F ~> Directive[F, *] = new ~>[F, Directive[F, *]] {
     override def apply[A](fa: F[A]): Directive[F, A] = Directive.liftF(fa)
   }
 
