@@ -104,14 +104,13 @@ trait RequestOps[F[_]] {
   def bodyAs[A](
       onError: DecodeFailure => Response[F]
   )(implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] = {
-    Directive(
-      req =>
-        req
-          .attemptAs[A]
-          .fold(
-            e => Result.failure(onError(e)),
-            Result.success
-          )
+    Directive(req =>
+      req
+        .attemptAs[A]
+        .fold(
+          e => Result.failure(onError(e)),
+          Result.success
+        )
     )
   }
 }

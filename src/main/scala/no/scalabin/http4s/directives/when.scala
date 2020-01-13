@@ -7,12 +7,11 @@ import scala.language.higherKinds
 
 case class when[F[_]: Monad, A](pf: PartialFunction[Request[F], A]) {
   def orElse(fail: Directive[F, Response[F]]): Directive[F, A] =
-    Directive.request.flatMap(
-      req =>
-        pf.lift(req) match {
-          case Some(r) => Directive.pure(r)
-          case None    => fail.flatMap(r => Directive.failure(r))
-        }
+    Directive.request.flatMap(req =>
+      pf.lift(req) match {
+        case Some(r) => Directive.pure(r)
+        case None    => fail.flatMap(r => Directive.failure(r))
+      }
     )
 
   def orElseRes(fail: => Response[F]): Directive[F, A] =
