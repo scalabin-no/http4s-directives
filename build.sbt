@@ -1,4 +1,4 @@
-val http4sVersion = "0.21.0-RC3"
+val http4sVersion = "0.21.0-RC5"
 
 inThisBuild(
   Seq(
