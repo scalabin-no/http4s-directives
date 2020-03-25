@@ -6,5 +6,5 @@ addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.13")
 
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.3.2")
 
-addSbtPlugin("com.47deg"     % "sbt-microsites" % "1.1.5")
-addSbtPlugin("org.scalameta" % "sbt-mdoc"       % "2.1.1")
+addSbtPlugin("com.47deg"     % "sbt-microsites" % "1.1.3")
+addSbtPlugin("org.scalameta" % "sbt-mdoc"       % "2.1.5")
