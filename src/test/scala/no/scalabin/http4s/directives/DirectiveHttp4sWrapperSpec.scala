@@ -45,8 +45,8 @@ class DirectiveHttp4sWrapperSpec extends AnyFlatSpec with Matchers {
 
   private val foobarService =
     DirectiveRoutes[IO] {
-      case GET -> Root / "foo" => Ok("1").successF
-      case GET -> Root / "bar" => Ok("2").successF
+      case GET -> Root / "foo" => Ok("1").toDirective
+      case GET -> Root / "bar" => Ok("2").toDirective
     }
 
   private val numberService = {

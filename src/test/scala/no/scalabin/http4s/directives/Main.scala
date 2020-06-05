@@ -8,6 +8,8 @@ import org.http4s._
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 
+import scala.concurrent.ExecutionContext
+
 object Main extends IOApp {
 
   override def run(args: List[String]) = {
@@ -29,6 +31,11 @@ object Main extends IOApp {
         }
       }.orNotFound
 
-    BlazeServerBuilder[IO].bindHttp(8080, "localhost").withHttpApp(service).resource.use(_ => IO.never).as(ExitCode.Success)
+    BlazeServerBuilder[IO](executionContext = ExecutionContext.global)
+      .bindHttp(8080, "localhost")
+      .withHttpApp(service)
+      .resource
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
   }
 }

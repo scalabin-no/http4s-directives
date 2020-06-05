@@ -7,6 +7,7 @@ import org.http4s._
 import org.http4s.implicits._
 import org.http4s.server.blaze._
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 object SSEApp extends IOApp {
@@ -25,7 +26,12 @@ object SSEApp extends IOApp {
           }
       }.orNotFound
 
-    BlazeServerBuilder[IO].bindLocal(8080).withHttpApp(service).resource.use(_ => IO.never).as(ExitCode.Success)
+    BlazeServerBuilder[IO](executionContext = ExecutionContext.global)
+      .bindLocal(8080)
+      .withHttpApp(service)
+      .resource
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
   }
 
   def events: Stream[IO, Event] = {

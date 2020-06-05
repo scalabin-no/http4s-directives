@@ -20,14 +20,26 @@ trait DirectiveOps[F[_]] {
 
   implicit class MonadDecorator[X](f: F[X])(implicit sync: Monad[F]) {
 
+    @deprecated("Use toDirective instead")
     def successF: Directive[F, X]                                          = Directive.successF(f)
     def failureF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C] = Directive.failureF(ev(f))
     def errorF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C]   = Directive.errorF(ev(f))
+
+    @deprecated("Use toDirective instead")
     def liftF: Directive[F, X]                                             = Directive.liftF(f)
+
+    def toDirective: Directive[F, X]                                       = Directive.liftF(f)
   }
 
   //TODO: Consider having these as documentation and not as actual code in the library
   implicit class OptionDirectives[A](opt: Option[A])(implicit S: Monad[F]) {
+    def toDirective(failure: Directive[F, Response[F]]): Directive[F, A] =
+      opt match {
+        case Some(a) => Directive.success(a)
+        case None    => failure.failure
+      }
+
+    @deprecated("use toDirective instead")
     def toSuccess(failure: Directive[F, A]): Directive[F, A] = {
       opt match {
         case Some(a) => Directive.success(a)
@@ -37,6 +49,14 @@ trait DirectiveOps[F[_]] {
   }
 
   implicit class EitherDirectives[E, A](either: Either[E, A])(implicit S: Monad[F]) {
+    def toDirective(failure: E => Directive[F, Response[F]]): Directive[F, A] = {
+      either match {
+        case Right(a)   => Directive.success(a)
+        case Left(left) => failure(left).failure
+      }
+    }
+
+    @deprecated("use toDirective instead")
     def toSuccess(failure: E => Directive[F, A]): Directive[F, A] = {
       either match {
         case Right(a)   => Directive.success(a)
@@ -46,11 +66,19 @@ trait DirectiveOps[F[_]] {
   }
 
   implicit class EitherTDirectives[E, A](monad: EitherT[F, E, A])(implicit S: Monad[F]) {
+    def toDirective(failure: E => Directive[F, Response[F]]): Directive[F, A] =
+      Directive(req => monad.fold((e) => failure(e).failure[A], a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
+
+    @deprecated("use toDirective instead")
     def toSuccess(failure: E => Directive[F, A]): Directive[F, A] =
       Directive(req => monad.fold(failure, a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
   }
 
   implicit class OptionTDirectives[A](monad: OptionT[F, A])(implicit S: Monad[F]) {
+    def toDirective(failure: Directive[F, Response[F]]): Directive[F, A] =
+      Directive(req => monad.fold(failure.failure[A])(a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
+
+    @deprecated("use toDirective instead")
     def toSuccess(failure: Directive[F, A]): Directive[F, A] =
       Directive(req => monad.fold(failure)(a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
   }
