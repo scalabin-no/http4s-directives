@@ -54,7 +54,7 @@ class DirectiveHttp4sWrapperSpec extends AnyFlatSpec with Matchers {
     import dsl._
 
     DirectiveRoutes[IO] {
-      case GET -> Root => Ok("root")
+      case GET -> Root                   => Ok("root")
       case GET -> Root / LongVar(number) => {
         if (number == 0)
           InternalServerError("No zeros!")

@@ -12,7 +12,7 @@ import scala.language.implicitConversions
 
 trait RequestDirectives[F[_]] extends WhenOps[F] {
 
-  implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Monad[F]): Directive[F, Method] =
+  implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Monad[F]): Directive[F, Method]               =
     when[Method] { case req if eq.eqv(M, req.method) => M } orElseRes Response[F](Status.MethodNotAllowed)
 
   implicit def liftHeaderDirective[KEY <: HeaderKey](K: KEY)(implicit sync: Monad[F]): Directive[F, Option[K.HeaderT]] =
@@ -26,9 +26,9 @@ trait RequestDirectives[F[_]] extends WhenOps[F] {
 }
 
 trait RequestOps[F[_]] {
-  def apply(implicit monad: Monad[F]) = Directive.request[F]
+  def apply()(implicit monad: Monad[F]) = Directive.request[F]
 
-  def headers(implicit M: Monad[F]): Directive[F, Headers] = apply.map(_.headers)
+  def headers(implicit M: Monad[F]): Directive[F, Headers] = apply().map(_.headers)
 
   def header[KEY <: HeaderKey](key: KEY)(implicit M: Monad[F]): Directive[F, Option[key.HeaderT]] =
     headers.map(_.get(key.name)).map(_.flatMap(h => key.matchHeader(h)))
@@ -39,8 +39,8 @@ trait RequestOps[F[_]] {
   def headerOrElseF[KEY <: HeaderKey](key: KEY, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, key.HeaderT] =
     header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
-  def headerOrElse[KEY <: HeaderKey](key: KEY, orElse: Directive[F, Response[F]])(
-      implicit M: Monad[F]
+  def headerOrElse[KEY <: HeaderKey](key: KEY, orElse: Directive[F, Response[F]])(implicit
+      M: Monad[F]
   ): Directive[F, key.HeaderT] =
     header(key).flatMap(opt => Directive.getOrElse(opt, orElse))
 
@@ -101,8 +101,8 @@ trait RequestOps[F[_]] {
   def path(implicit M: Monad[F]): Directive[F, Uri.Path] = uri.map(_.path)
   def query(implicit M: Monad[F]): Directive[F, Query]   = uri.map(_.query)
 
-  def queryParams(name: String)(implicit M: Monad[F]): Directive[F, Seq[String]]   = query.map(_.multiParams.getOrElse(name, Nil))
-  def queryParam(name: String)(implicit M: Monad[F]): Directive[F, Option[String]] = query.map(_.params.get(name))
+  def queryParams(name: String)(implicit M: Monad[F]): Directive[F, Seq[String]]                         = query.map(_.multiParams.getOrElse(name, Nil))
+  def queryParam(name: String)(implicit M: Monad[F]): Directive[F, Option[String]]                       = query.map(_.params.get(name))
   def queryParamOrElse(name: String, orElse: => Response[F])(implicit M: Monad[F]): Directive[F, String] =
     queryParamOrElseF(name, M.pure(orElse))
 
