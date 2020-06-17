@@ -23,7 +23,8 @@ object HttpClientProxy extends IOApp {
 
     val resources = for {
       client <- BlazeClientBuilder[IO](executionContext = ExecutionContext.global).resource
-      _      <- BlazeServerBuilder[IO].bindLocal(8080).withHttpApp(service(client)).resource
+      _      <-
+        BlazeServerBuilder[IO](executionContext = ExecutionContext.global).bindLocal(8080).withHttpApp(service(client)).resource
     } yield ()
 
     resources
@@ -39,12 +40,12 @@ object HttpClientProxy extends IOApp {
     def directiveFor(fRes: F[Response[F]]): ResponseDirective = {
       for {
         _   <- Method.GET
-        res <- fRes.successF
+        res <- fRes.toDirective
       } yield { res }
     }
 
     def directiveflatMap(res: F[Response[F]]): ResponseDirective = {
-      Method.GET.flatMap(_ => res.successF)
+      Method.GET.flatMap(_ => res.toDirective)
     }
 
     def httpRoutes =

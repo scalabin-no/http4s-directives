@@ -26,8 +26,8 @@ trait Conditional[F[_]] extends RequestDirectives[F] {
     for {
       mod <- request.header(`If-Modified-Since`)
       res <- mod
-              .filter(_.date == date)
-              .fold(orElse)(_ => Directive.failure[F, Response[F]](Response[F](Status.NotModified)))
+               .filter(_.date == date)
+               .fold(orElse)(_ => Directive.failure[F, Response[F]](Response[F](Status.NotModified)))
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
@@ -44,8 +44,8 @@ trait Conditional[F[_]] extends RequestDirectives[F] {
     for {
       mod <- request.header(`If-Unmodified-Since`)
       res <- mod
-              .filter(_.date == date)
-              .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => orElse)
+               .filter(_.date == date)
+               .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => orElse)
     } yield res.putHeaders(`Last-Modified`(date))
   }
 
@@ -61,8 +61,8 @@ trait Conditional[F[_]] extends RequestDirectives[F] {
     for {
       mod <- request.header(`If-None-Match`)
       res <- mod
-              .filter(_.tags.exists(t => t.exists(_ == tag)))
-              .fold(orElse)(_ => Directive.failure(Response[F](Status.NotModified)))
+               .filter(_.tags.exists(t => t.exists(_ == tag)))
+               .fold(orElse)(_ => Directive.failure(Response[F](Status.NotModified)))
     } yield res.putHeaders(ETag(tag))
   }
 
@@ -78,8 +78,8 @@ trait Conditional[F[_]] extends RequestDirectives[F] {
     for {
       mod <- request.header(`If-Match`)
       res <- mod
-              .filter(_.tags.exists(t => t.exists(_ == tag)))
-              .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => orElse)
+               .filter(_.tags.exists(t => t.exists(_ == tag)))
+               .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => orElse)
     } yield res.putHeaders(ETag(tag))
   }
 }

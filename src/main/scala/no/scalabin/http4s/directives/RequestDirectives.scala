@@ -6,12 +6,13 @@ import cats.data.NonEmptyList
 import cats.effect.Sync
 import org.http4s.util.CaseInsensitiveString
 import org.http4s._
+import org.http4s.headers.`Content-Type`
 
 import scala.language.implicitConversions
 
 trait RequestDirectives[F[_]] extends WhenOps[F] {
 
-  implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Monad[F]): Directive[F, Method] =
+  implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Monad[F]): Directive[F, Method]               =
     when[Method] { case req if eq.eqv(M, req.method) => M } orElseRes Response[F](Status.MethodNotAllowed)
 
   implicit def liftHeaderDirective[KEY <: HeaderKey](K: KEY)(implicit sync: Monad[F]): Directive[F, Option[K.HeaderT]] =
@@ -25,8 +26,9 @@ trait RequestDirectives[F[_]] extends WhenOps[F] {
 }
 
 trait RequestOps[F[_]] {
+  def apply()(implicit monad: Monad[F]) = Directive.request[F]
 
-  def headers(implicit M: Monad[F]): Directive[F, Headers] = Directive.request.map(_.headers)
+  def headers(implicit M: Monad[F]): Directive[F, Headers] = apply().map(_.headers)
 
   def header[KEY <: HeaderKey](key: KEY)(implicit M: Monad[F]): Directive[F, Option[key.HeaderT]] =
     headers.map(_.get(key.name)).map(_.flatMap(h => key.matchHeader(h)))
@@ -37,8 +39,8 @@ trait RequestOps[F[_]] {
   def headerOrElseF[KEY <: HeaderKey](key: KEY, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, key.HeaderT] =
     header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
-  def headerOrElse[KEY <: HeaderKey](key: KEY, orElse: Directive[F, Response[F]])(
-      implicit M: Monad[F]
+  def headerOrElse[KEY <: HeaderKey](key: KEY, orElse: Directive[F, Response[F]])(implicit
+      M: Monad[F]
   ): Directive[F, key.HeaderT] =
     header(key).flatMap(opt => Directive.getOrElse(opt, orElse))
 
@@ -52,6 +54,21 @@ trait RequestOps[F[_]] {
 
   def headerOrElseF(key: String, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, Header] =
     header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
+
+  def expectMediaType(first: MediaType, rest: MediaType*)(implicit M: Monad[F]) = {
+    val nel = first :: rest.toList
+    for {
+      ct <- headerOrElse(`Content-Type`, Response[F](Status.UnprocessableEntity))
+      if Directive.Filter(nel.contains(ct.mediaType), Directive.failure(Response[F](Status.UnsupportedMediaType)))
+    } yield ct.mediaType
+  }
+
+  def expectMediaType(range: Set[MediaRange])(implicit M: Monad[F]) = {
+    for {
+      ct <- headerOrElse(`Content-Type`, Response[F](Status.UnprocessableEntity))
+      if Directive.Filter(range.contains(ct.mediaType), Directive.failure(Response[F](Status.UnsupportedMediaType)))
+    } yield ct.mediaType
+  }
 
   def cookies(implicit M: Monad[F]): Directive[F, Option[NonEmptyList[RequestCookie]]] =
     header(org.http4s.headers.Cookie).map(_.map(_.values))
@@ -84,8 +101,8 @@ trait RequestOps[F[_]] {
   def path(implicit M: Monad[F]): Directive[F, Uri.Path] = uri.map(_.path)
   def query(implicit M: Monad[F]): Directive[F, Query]   = uri.map(_.query)
 
-  def queryParams(name: String)(implicit M: Monad[F]): Directive[F, Seq[String]]   = query.map(_.multiParams.getOrElse(name, Nil))
-  def queryParam(name: String)(implicit M: Monad[F]): Directive[F, Option[String]] = query.map(_.params.get(name))
+  def queryParams(name: String)(implicit M: Monad[F]): Directive[F, Seq[String]]                         = query.map(_.multiParams.getOrElse(name, Nil))
+  def queryParam(name: String)(implicit M: Monad[F]): Directive[F, Option[String]]                       = query.map(_.params.get(name))
   def queryParamOrElse(name: String, orElse: => Response[F])(implicit M: Monad[F]): Directive[F, String] =
     queryParamOrElseF(name, M.pure(orElse))
 
@@ -97,6 +114,13 @@ trait RequestOps[F[_]] {
 
   def as[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] =
     Directive(_.as[A].map(Result.success))
+
+  def asExpected[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] = {
+    for {
+      _  <- expectMediaType(dec.consumes)
+      as <- as[A]
+    } yield as
+  }
 
   def bodyAs[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] =
     bodyAs(_ => Response[F](Status.InternalServerError))
