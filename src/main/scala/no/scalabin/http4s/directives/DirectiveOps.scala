@@ -26,9 +26,9 @@ trait DirectiveOps[F[_]] {
     def errorF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C]   = Directive.errorF(ev(f))
 
     @deprecated("Use toDirective instead")
-    def liftF: Directive[F, X]                                             = Directive.liftF(f)
+    def liftF: Directive[F, X] = Directive.liftF(f)
 
-    def toDirective: Directive[F, X]                                       = Directive.liftF(f)
+    def toDirective: Directive[F, X] = Directive.liftF(f)
   }
 
   //TODO: Consider having these as documentation and not as actual code in the library
