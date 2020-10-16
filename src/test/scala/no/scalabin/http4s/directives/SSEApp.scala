@@ -16,14 +16,13 @@ object SSEApp extends IOApp {
     import dsl._
 
     val service =
-      DirectiveRoutes[IO] {
-        case _ =>
-          for {
-            _   <- Method.GET
-            res <- Ok(events.map(e => ServerSentEvent(e.toString)))
-          } yield {
-            res
-          }
+      DirectiveRoutes[IO] { case _ =>
+        for {
+          _   <- Method.GET
+          res <- Ok(events.map(e => ServerSentEvent(e.toString)))
+        } yield {
+          res
+        }
       }.orNotFound
 
     BlazeServerBuilder[IO](executionContext = ExecutionContext.global)

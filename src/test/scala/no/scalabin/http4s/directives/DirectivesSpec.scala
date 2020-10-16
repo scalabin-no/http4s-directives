@@ -62,14 +62,13 @@ class DirectivesSpec extends AnyFlatSpec with Matchers {
     val dsl = new DirectivesDsl[IO] with DirectiveDslOps[IO]
     import dsl._
 
-    DirectiveRoutes[IO] {
-      case Path("hello") =>
-        for {
-          _   <- Method.GET
-          res <- ifModifiedSinceDir(lastModifiedTime, Ok("Hello World"))
-          foo <- request.queryParam("foo")
-          if foo.isDefined or BadRequest(IO("You didn't provide a foo, you fool!"))
-        } yield res
+    DirectiveRoutes[IO] { case Path("hello") =>
+      for {
+        _   <- Method.GET
+        res <- ifModifiedSinceDir(lastModifiedTime, Ok("Hello World"))
+        foo <- request.queryParam("foo")
+        if foo.isDefined or BadRequest(IO("You didn't provide a foo, you fool!"))
+      } yield res
     }
   }
 

@@ -1,8 +1,4 @@
-disablePlugins(aether.AetherPlugin)
-enablePlugins(aether.SignedAetherPlugin)
-
 overridePublishSignedSettings
-overridePublishLocalSettings
 
 publishTo := {
   if (isSnapshot.value) {
@@ -36,7 +32,7 @@ packageOptions += {
 }
 
 credentials ++= Seq(
-  Credentials(Path.userHome / ".sbt" / ".credentials"),
+  Credentials(Path.userHome / ".sbt" / ".credentials")
 )
 
 homepage := Some(url("https://github.com/scalabin-no/http4s-directives"))
@@ -64,7 +60,8 @@ scmInfo := Some(
     new URL("https://github.com/scalabin-no/http4s-directives"),
     "scm:git:git@github.com:scalabin-no/http4s-directives.git",
     Some("scm:git:git@github.com:scalabin-no/http4s-directives.git")
-  ))
+  )
+)
 
 developers ++= List(
   Developer(
@@ -84,6 +81,5 @@ developers ++= List(
     "Ingar Abrahamsen",
     "",
     new URL("http://twitter.com/ingarabr")
-  ),
-
+  )
 )
