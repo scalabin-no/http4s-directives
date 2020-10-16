@@ -20,12 +20,12 @@ trait DirectiveOps[F[_]] {
 
   implicit class MonadDecorator[X](f: F[X])(implicit sync: Monad[F]) {
 
-    @deprecated("Use toDirective instead")
+    @deprecated(message = "use toDirective instead", since = "0.21.5")
     def successF: Directive[F, X]                                          = Directive.successF(f)
     def failureF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C] = Directive.failureF(ev(f))
     def errorF[C](implicit ev: F[X] =:= F[Response[F]]): Directive[F, C]   = Directive.errorF(ev(f))
 
-    @deprecated("Use toDirective instead")
+    @deprecated(message = "use toDirective instead", since = "0.21.5")
     def liftF: Directive[F, X] = Directive.liftF(f)
 
     def toDirective: Directive[F, X] = Directive.liftF(f)
@@ -39,7 +39,7 @@ trait DirectiveOps[F[_]] {
         case None    => failure.failure
       }
 
-    @deprecated("use toDirective instead")
+    @deprecated(message = "use toDirective instead", since = "0.21.5")
     def toSuccess(failure: Directive[F, A]): Directive[F, A] = {
       opt match {
         case Some(a) => Directive.success(a)
@@ -56,7 +56,7 @@ trait DirectiveOps[F[_]] {
       }
     }
 
-    @deprecated("use toDirective instead")
+    @deprecated(message = "use toDirective instead", since = "0.21.5")
     def toSuccess(failure: E => Directive[F, A]): Directive[F, A] = {
       either match {
         case Right(a)   => Directive.success(a)
@@ -69,7 +69,7 @@ trait DirectiveOps[F[_]] {
     def toDirective(failure: E => Directive[F, Response[F]]): Directive[F, A] =
       Directive(req => monad.fold((e) => failure(e).failure[A], a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
 
-    @deprecated("use toDirective instead")
+    @deprecated(message = "use toDirective instead", since = "0.21.5")
     def toSuccess(failure: E => Directive[F, A]): Directive[F, A] =
       Directive(req => monad.fold(failure, a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
   }
@@ -78,7 +78,7 @@ trait DirectiveOps[F[_]] {
     def toDirective(failure: Directive[F, Response[F]]): Directive[F, A] =
       Directive(req => monad.fold(failure.failure[A])(a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
 
-    @deprecated("use toDirective instead")
+    @deprecated(message = "use toDirective instead", since = "0.21.5")
     def toSuccess(failure: Directive[F, A]): Directive[F, A] =
       Directive(req => monad.fold(failure)(a => Directive.success[F, A](a)).flatMap(d => d.run(req)))
   }

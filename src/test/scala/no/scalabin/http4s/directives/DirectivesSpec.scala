@@ -53,7 +53,7 @@ class DirectivesSpec extends AnyFlatSpec with Matchers {
   private def check(response: Response[IO], expectedHttpCode: Status, expectedBody: Option[String] = None) = {
     response.status shouldBe expectedHttpCode
     if (expectedBody.nonEmpty) {
-      val body = response.bodyAsText.compile.last.unsafeRunSync()
+      val body = response.bodyText.compile.last.unsafeRunSync()
       body shouldBe expectedBody
     }
   }

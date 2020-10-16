@@ -70,7 +70,7 @@ class DirectiveHttp4sWrapperSpec extends AnyFlatSpec with Matchers {
     val response = responseIO.unsafeRunSync()
     response.status shouldBe expectedHttpCode
     if (expectedBody.nonEmpty) {
-      val body = response.bodyAsText.compile.last.unsafeRunSync()
+      val body = response.bodyText.compile.last.unsafeRunSync()
       body shouldBe expectedBody
     }
   }
