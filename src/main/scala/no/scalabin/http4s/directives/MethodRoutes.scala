@@ -14,7 +14,7 @@ object MethodRoutes {
       )
     def httpRoutes[F[_]: Monad: Defer](map: Map[Method, Directive[F, Response[F]]]): HttpRoutes[F] = fromMap(map).toHttpRoutes
 
-    def toContextRoutes[F[_]: Monad: Defer, A](map: Map[Method, Directive[F, Response[F]]]): ContextRoutes[A, F] =
+    def contextRoutes[F[_]: Monad: Defer, A](map: Map[Method, Directive[F, Response[F]]]): ContextRoutes[A, F] =
       ContextRoutes((req: ContextRequest[F, A]) => httpRoutes(map).apply(req.req))
   }
 
@@ -23,6 +23,6 @@ object MethodRoutes {
 
   def httpRoutes[F[_]: Monad: Defer](map: (Method, Directive[F, Response[F]])*): HttpRoutes[F] = fromMap.httpRoutes(map.toMap)
 
-  def toContextRoutes[F[_]: Monad: Defer, A](map: (Method, Directive[F, Response[F]])*): ContextRoutes[A, F] =
-    fromMap.toContextRoutes(map.toMap)
+  def contextRoutes[F[_]: Monad: Defer, A](map: (Method, Directive[F, Response[F]])*): ContextRoutes[A, F] =
+    fromMap.contextRoutes(map.toMap)
 }
