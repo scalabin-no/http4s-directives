@@ -4,3 +4,4 @@ target/
 release.sbt
 .bloop
 .bsp
+bloop.sbt
