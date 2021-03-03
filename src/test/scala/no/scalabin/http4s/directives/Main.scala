@@ -20,7 +20,7 @@ object Main extends IOApp {
 
     val service =
       DirectiveRoutes[IO] {
-        case Path("hello") => {
+        case _ -> Root / "hello" => {
           for {
             _   <- Method.GET
             res <- ifModifiedSinceDir(lm, Ok("Hello World"))

@@ -1,9 +1,9 @@
-val http4sVersion = "0.21.19"
+val http4sVersion = "0.22.0-M4"
 
 inThisBuild(
   Seq(
     organization := "no.scalabin.http4s",
-    crossScalaVersions := Seq("2.13.4", "2.12.12"),
+    crossScalaVersions := Seq("2.13.4", "2.12.13"),
     scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= Seq(
       "-feature",
@@ -34,7 +34,7 @@ lazy val root = (project in file(".")).settings(
 
 lazy val mdoc = (project in file("mdoc"))
   .settings(
-    micrositeCompilingDocsTool := WithMdoc,
+   // micrositeCompilingDocsTool := WithMdoc,
     micrositeName := "http4s-directives",
     micrositeDescription := "Directives for http4s",
     micrositeAuthor := "scalabin-no",

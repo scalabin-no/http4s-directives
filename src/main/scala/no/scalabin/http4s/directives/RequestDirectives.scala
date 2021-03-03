@@ -7,6 +7,7 @@ import cats.effect.Sync
 import org.http4s.util.CaseInsensitiveString
 import org.http4s._
 import org.http4s.headers.`Content-Type`
+import org.typelevel.ci.CIString
 
 import scala.language.implicitConversions
 
@@ -44,15 +45,15 @@ trait RequestOps[F[_]] {
   ): Directive[F, key.HeaderT] =
     header(key).flatMap(opt => Directive.getOrElse(opt, orElse))
 
-  def header(key: String)(implicit M: Monad[F]): Directive[F, Option[Header]] = headers.map(_.get(CaseInsensitiveString(key)))
+  def header(key: CIString)(implicit M: Monad[F]): Directive[F, Option[Header]] = headers.map(_.get(key))
 
-  def headerOrElse(key: String, orElse: => Response[F])(implicit M: Monad[F]): Directive[F, Header] =
+  def headerOrElse(key: CIString, orElse: => Response[F])(implicit M: Monad[F]): Directive[F, Header] =
     headerOrElseF(key, M.pure(orElse))
 
-  def headerOrElse(key: String, orElse: Directive[F, Response[F]])(implicit M: Monad[F]): Directive[F, Header] =
+  def headerOrElse(key: CIString, orElse: Directive[F, Response[F]])(implicit M: Monad[F]): Directive[F, Header] =
     header(key).flatMap(opt => Directive.getOrElse(opt, orElse))
 
-  def headerOrElseF(key: String, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, Header] =
+  def headerOrElseF(key: CIString, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, Header] =
     header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
   def expectMediaType(first: MediaType, rest: MediaType*)(implicit M: Monad[F]) = {
@@ -117,9 +118,9 @@ trait RequestOps[F[_]] {
 
   def asExpected[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] = {
     for {
-      _  <- expectMediaType(dec.consumes)
-      as <- as[A]
-    } yield as
+      _      <- expectMediaType(dec.consumes)
+      result <- as[A]
+    } yield result
   }
 
   def bodyAs[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] =
