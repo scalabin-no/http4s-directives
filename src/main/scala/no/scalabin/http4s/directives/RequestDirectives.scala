@@ -1,10 +1,8 @@
 package no.scalabin.http4s.directives
 
 import cats.syntax.functor._
-import cats.{Eq, Monad, MonadError}
+import cats.{data, Eq, Monad, MonadError}
 import cats.data.NonEmptyList
-import cats.effect.Sync
-import org.http4s.util.CaseInsensitiveString
 import org.http4s._
 import org.http4s.headers.`Content-Type`
 import org.typelevel.ci.CIString
@@ -13,15 +11,8 @@ import scala.language.implicitConversions
 
 trait RequestDirectives[F[_]] extends WhenOps[F] {
 
-  implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Monad[F]): Directive[F, Method]               =
+  implicit def MethodDirective(M: Method)(implicit eq: Eq[Method], sync: Monad[F]): Directive[F, Method] =
     when[Method] { case req if eq.eqv(M, req.method) => M } orElseRes Response[F](Status.MethodNotAllowed)
-
-  implicit def liftHeaderDirective[KEY <: HeaderKey](K: KEY)(implicit sync: Monad[F]): Directive[F, Option[K.HeaderT]] =
-    request.header(K)
-
-  implicit class HeaderDirective[KEY <: HeaderKey](val key: KEY)(implicit sync: Monad[F]) {
-    def directive: Directive[F, Option[key.HeaderT]] = liftHeaderDirective(key)
-  }
 
   object request extends RequestOps[F]
 }
@@ -31,48 +22,51 @@ trait RequestOps[F[_]] {
 
   def headers(implicit M: Monad[F]): Directive[F, Headers] = apply().map(_.headers)
 
-  def header[KEY <: HeaderKey](key: KEY)(implicit M: Monad[F]): Directive[F, Option[key.HeaderT]] =
-    headers.map(_.get(key.name)).map(_.flatMap(h => key.matchHeader(h)))
+  def header[KEY](implicit H: Header.Select[KEY], M: Monad[F]): Directive[F, Option[H.F[KEY]]] =
+    headers.map(_.get[KEY])
 
-  def headerOrElse[KEY <: HeaderKey](key: KEY, orElse: => Response[F])(implicit M: Monad[F]): Directive[F, key.HeaderT] =
-    headerOrElseF(key, Monad[F].pure(orElse))
+  def headerOrElse[KEY](orElse: => Response[F])(implicit H: Header.Select[KEY], M: Monad[F]): Directive[F, H.F[KEY]] =
+    headerOrElseF(Monad[F].pure(orElse))
 
-  def headerOrElseF[KEY <: HeaderKey](key: KEY, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, key.HeaderT] =
-    header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
+  def headerOrElseF[KEY](orElse: F[Response[F]])(implicit H: Header.Select[KEY], M: Monad[F]): Directive[F, H.F[KEY]] =
+    header.flatMap(opt => Directive.getOrElseF(opt, orElse))
 
-  def headerOrElse[KEY <: HeaderKey](key: KEY, orElse: Directive[F, Response[F]])(implicit
+  def headerOrElse[KEY](orElse: Directive[F, Response[F]])(implicit
+      H: Header.Select[KEY],
       M: Monad[F]
-  ): Directive[F, key.HeaderT] =
-    header(key).flatMap(opt => Directive.getOrElse(opt, orElse))
+  ): Directive[F, H.F[KEY]] =
+    header.flatMap(opt => Directive.getOrElse(opt, orElse))
 
-  def header(key: CIString)(implicit M: Monad[F]): Directive[F, Option[Header]] = headers.map(_.get(key))
+  def header(key: CIString)(implicit M: Monad[F]): Directive[F, Option[data.NonEmptyList[Header.Raw]]] = headers.map(_.get(key))
 
-  def headerOrElse(key: CIString, orElse: => Response[F])(implicit M: Monad[F]): Directive[F, Header] =
+  def headerOrElse(key: CIString, orElse: => Response[F])(implicit M: Monad[F]): Directive[F, data.NonEmptyList[Header.Raw]] =
     headerOrElseF(key, M.pure(orElse))
 
-  def headerOrElse(key: CIString, orElse: Directive[F, Response[F]])(implicit M: Monad[F]): Directive[F, Header] =
+  def headerOrElse(key: CIString, orElse: Directive[F, Response[F]])(implicit
+      M: Monad[F]
+  ): Directive[F, data.NonEmptyList[Header.Raw]] =
     header(key).flatMap(opt => Directive.getOrElse(opt, orElse))
 
-  def headerOrElseF(key: CIString, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, Header] =
+  def headerOrElseF(key: CIString, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, data.NonEmptyList[Header.Raw]] =
     header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
   def expectMediaType(first: MediaType, rest: MediaType*)(implicit M: Monad[F]) = {
     val nel = first :: rest.toList
     for {
-      ct <- headerOrElse(`Content-Type`, Response[F](Status.UnprocessableEntity))
+      ct <- headerOrElse[`Content-Type`](Response[F](Status.UnprocessableEntity))
       if Directive.Filter(nel.contains(ct.mediaType), Directive.failure(Response[F](Status.UnsupportedMediaType)))
     } yield ct.mediaType
   }
 
   def expectMediaType(range: Set[MediaRange])(implicit M: Monad[F]) = {
     for {
-      ct <- headerOrElse(`Content-Type`, Response[F](Status.UnprocessableEntity))
+      ct <- headerOrElse[`Content-Type`](Response[F](Status.UnprocessableEntity))
       if Directive.Filter(range.contains(ct.mediaType), Directive.failure(Response[F](Status.UnsupportedMediaType)))
     } yield ct.mediaType
   }
 
   def cookies(implicit M: Monad[F]): Directive[F, Option[NonEmptyList[RequestCookie]]] =
-    header(org.http4s.headers.Cookie).map(_.map(_.values))
+    header[org.http4s.headers.Cookie].map(_.map(_.values))
 
   def cookiesAsList(implicit M: Monad[F]): Directive[F, List[RequestCookie]] =
     cookies.map(_.toList.flatMap(_.toList))

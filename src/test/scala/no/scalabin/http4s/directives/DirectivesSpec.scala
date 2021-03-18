@@ -28,7 +28,7 @@ class DirectivesSpec extends AnyFlatSpec with Matchers {
   it should "respond with not modified response" in {
     val modified = `If-Modified-Since`(HttpDate.unsafeFromInstant(lastModifiedTime.toInstant(ZoneOffset.UTC)))
     val response = createService().orNotFound
-      .run(Request(method = Method.GET, uri = uri"/hello?foo=1", headers = Headers.of(modified)))
+      .run(Request(method = Method.GET, uri = uri"/hello?foo=1", headers = Headers(modified)))
       .unsafeRunSync()
 
     check(response = response, expectedHttpCode = NotModified)

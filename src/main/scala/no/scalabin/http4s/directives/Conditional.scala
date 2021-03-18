@@ -24,7 +24,7 @@ trait Conditional[F[_]] extends RequestDirectives[F] {
   def ifModifiedSinceDir(lm: LocalDateTime, orElse: ResponseDirective)(implicit M: Monad[F]): ResponseDirective = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
-      mod <- request.header(`If-Modified-Since`)
+      mod <- request.header[`If-Modified-Since`]
       res <- mod
                .filter(_.date == date)
                .fold(orElse)(_ => Directive.failure[F, Response[F]](Response[F](Status.NotModified)))
@@ -42,7 +42,7 @@ trait Conditional[F[_]] extends RequestDirectives[F] {
   def ifUnmodifiedSinceDir(lm: LocalDateTime, orElse: ResponseDirective)(implicit M: Monad[F]): ResponseDirective = {
     val date = HttpDate.unsafeFromInstant(lm.toInstant(ZoneOffset.UTC))
     for {
-      mod <- request.header(`If-Unmodified-Since`)
+      mod <- request.header[`If-Unmodified-Since`]
       res <- mod
                .filter(_.date == date)
                .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => orElse)
@@ -59,7 +59,7 @@ trait Conditional[F[_]] extends RequestDirectives[F] {
 
   def ifNoneMatchDir(tag: ETag.EntityTag, orElse: ResponseDirective)(implicit M: Monad[F]): ResponseDirective = {
     for {
-      mod <- request.header(`If-None-Match`)
+      mod <- request.header[`If-None-Match`]
       res <- mod
                .filter(_.tags.exists(t => t.exists(_ == tag)))
                .fold(orElse)(_ => Directive.failure(Response[F](Status.NotModified)))
@@ -76,7 +76,7 @@ trait Conditional[F[_]] extends RequestDirectives[F] {
 
   def ifMatchDir(tag: ETag.EntityTag, orElse: ResponseDirective)(implicit M: Monad[F]): ResponseDirective = {
     for {
-      mod <- request.header(`If-Match`)
+      mod <- request.header[`If-Match`]
       res <- mod
                .filter(_.tags.exists(t => t.exists(_ == tag)))
                .fold(Directive.failure[F, Response[F]](Response[F](Status.NotModified)))(_ => orElse)
