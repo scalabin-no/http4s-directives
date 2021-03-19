@@ -7,6 +7,7 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import cats.effect.unsafe.implicits.global
 
 class DirectiveHttp4sWrapperSpec extends AnyFlatSpec with Matchers {
   it should "respond with a ok response for /foo" in {

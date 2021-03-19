@@ -8,14 +8,12 @@ import org.http4s.implicits._
 import org.http4s.dsl.io._
 import org.http4s.headers.`If-Modified-Since`
 
-import scala.concurrent.ExecutionContext
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import cats.effect.unsafe.implicits.global
 
 class DirectivesSpec extends AnyFlatSpec with Matchers {
   private val lastModifiedTime = LocalDateTime.now()
-
-  implicit def contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
   it should "respond with a ok response" in {
     val response = createService().orNotFound
