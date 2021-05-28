@@ -1,4 +1,4 @@
-val http4sVersion = "1.0.0-M23"
+val http4sVersion = "0.23.0-RC1"
 
 inThisBuild(
   Seq(
@@ -34,7 +34,6 @@ lazy val root = (project in file(".")).settings(
 
 lazy val mdoc = (project in file("mdoc"))
   .settings(
-   // micrositeCompilingDocsTool := WithMdoc,
     micrositeName := "http4s-directives",
     micrositeDescription := "Directives for http4s",
     micrositeAuthor := "scalabin-no",
