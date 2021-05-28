@@ -1,9 +1,9 @@
-val http4sVersion = "1.0.0-M21"
+val http4sVersion = "1.0.0-M23"
 
 inThisBuild(
   Seq(
     organization := "no.scalabin.http4s",
-    crossScalaVersions := Seq("2.13.5", "2.12.14"),
+    crossScalaVersions := Seq("2.13.6", "2.12.13", "3.0.0"),
     scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= Seq(
       "-feature",
@@ -18,15 +18,20 @@ inThisBuild(
       "org.http4s"    %% "http4s-dsl"          % http4sVersion,
       "org.http4s"    %% "http4s-blaze-server" % http4sVersion % Test,
       "org.http4s"    %% "http4s-blaze-client" % http4sVersion % Test,
-      "org.scalatest" %% "scalatest"           % "3.2.8"       % Test
+      "org.scalatest" %% "scalatest"           % "3.2.9"       % Test
     )
   )
 )
 
 lazy val root = (project in file(".")).settings(
   name := "http4s-directives",
-  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.12.0" cross CrossVersion.full),
+  libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, _)) =>
+      Seq(compilerPlugin("org.typelevel" % "kind-projector" % "0.13.0" cross CrossVersion.full))
+    case _            => Nil
+  }),
   scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((3, _))            => Seq("-Ykind-projector")
     case Some((2, v)) if v <= 12 => Seq("-Ypartial-unification")
     case _                       => Seq.empty
   })
@@ -34,7 +39,6 @@ lazy val root = (project in file(".")).settings(
 
 lazy val mdoc = (project in file("mdoc"))
   .settings(
-   // micrositeCompilingDocsTool := WithMdoc,
     micrositeName := "http4s-directives",
     micrositeDescription := "Directives for http4s",
     micrositeAuthor := "scalabin-no",

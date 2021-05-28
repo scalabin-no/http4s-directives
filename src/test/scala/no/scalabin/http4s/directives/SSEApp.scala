@@ -5,7 +5,7 @@ import cats.implicits._
 import fs2._
 import org.http4s._
 import org.http4s.implicits._
-import org.http4s.server.blaze._
+import org.http4s.blaze.server._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -19,7 +19,7 @@ object SSEApp extends IOApp {
       DirectiveRoutes[IO] { case _ =>
         for {
           _   <- Method.GET
-          res <- Ok(events.map(e => ServerSentEvent(e.toString)))
+          res <- Ok(events.map(e => ServerSentEvent(data = Some(e.toString))))
         } yield {
           res
         }

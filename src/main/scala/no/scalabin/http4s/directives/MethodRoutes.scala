@@ -9,7 +9,7 @@ object MethodRoutes {
     def apply[F[_]: Monad](map: Map[Method, Directive[F, Response[F]]]): Directive[F, Response[F]] =
       Directive((req: Request[F]) =>
         map
-          .getOrElse(req.method, Directive.error(Response(Status.MethodNotAllowed).putHeaders(Allow(map.keySet))))
+          .getOrElse(req.method, Directive.error[F, Response[F]](Response(Status.MethodNotAllowed).putHeaders(Allow(map.keySet))))
           .run(req)
       )
     def httpRoutes[F[_]: Monad: Defer](map: Map[Method, Directive[F, Response[F]]]): HttpRoutes[F] = fromMap(map).toHttpRoutes
