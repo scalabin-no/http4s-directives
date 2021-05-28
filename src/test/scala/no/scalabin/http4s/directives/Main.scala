@@ -6,7 +6,7 @@ import cats.effect._
 import cats.implicits._
 import org.http4s._
 import org.http4s.implicits._
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 
 import scala.concurrent.ExecutionContext
 

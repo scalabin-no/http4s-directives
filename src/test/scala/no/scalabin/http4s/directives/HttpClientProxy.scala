@@ -6,9 +6,9 @@ import cats.effect._
 import cats.implicits._
 import org.http4s._
 import org.http4s.client.Client
-import org.http4s.client.blaze._
+import org.http4s.blaze.client._
+import org.http4s.blaze.server._
 import org.http4s.implicits._
-import org.http4s.server.blaze._
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
