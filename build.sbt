@@ -1,9 +1,9 @@
-val http4sVersion = "0.21.19"
+val http4sVersion = "0.21.24"
 
 inThisBuild(
   Seq(
     organization := "no.scalabin.http4s",
-    crossScalaVersions := Seq("2.13.4", "2.12.12"),
+    crossScalaVersions := Seq("2.13.6", "2.12.13"),
     scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= Seq(
       "-feature",
@@ -25,7 +25,7 @@ inThisBuild(
 
 lazy val root = (project in file(".")).settings(
   name := "http4s-directives",
-  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.3" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.0" cross CrossVersion.full),
   scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, v)) if v <= 12 => Seq("-Ypartial-unification")
     case _                       => Seq.empty
@@ -34,7 +34,6 @@ lazy val root = (project in file(".")).settings(
 
 lazy val mdoc = (project in file("mdoc"))
   .settings(
-    micrositeCompilingDocsTool := WithMdoc,
     micrositeName := "http4s-directives",
     micrositeDescription := "Directives for http4s",
     micrositeAuthor := "scalabin-no",
