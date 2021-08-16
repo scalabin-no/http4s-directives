@@ -1,9 +1,9 @@
-val http4sVersion = "0.22.0-RC1"
+val http4sVersion = "0.22.2"
 
 inThisBuild(
   Seq(
     organization := "no.scalabin.http4s",
-    crossScalaVersions := Seq("2.13.6", "2.12.13", "3.0.0"),
+    crossScalaVersions := Seq("2.13.6", "2.12.14", "3.0.0"),
     scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= Seq(
       "-feature",
