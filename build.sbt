@@ -27,7 +27,7 @@ lazy val root = (project in file(".")).settings(
   name := "http4s-directives",
   libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, _)) =>
-      Seq(compilerPlugin("org.typelevel" % "kind-projector" % "0.13.0" cross CrossVersion.full))
+      Seq(compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full))
     case _            => Nil
   }),
   scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
