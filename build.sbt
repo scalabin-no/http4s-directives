@@ -1,9 +1,9 @@
-val http4sVersion = "0.22.2"
+val http4sVersion = "0.22.8"
 
 inThisBuild(
   Seq(
     organization := "no.scalabin.http4s",
-    crossScalaVersions := Seq("2.13.6", "2.12.14", "3.0.0"),
+    crossScalaVersions := Seq("2.13.8", "2.12.15", "3.0.2"),
     scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= Seq(
       "-feature",
@@ -18,7 +18,7 @@ inThisBuild(
       "org.http4s"    %% "http4s-dsl"          % http4sVersion,
       "org.http4s"    %% "http4s-blaze-server" % http4sVersion % Test,
       "org.http4s"    %% "http4s-blaze-client" % http4sVersion % Test,
-      "org.scalatest" %% "scalatest"           % "3.2.9"       % Test
+      "org.scalatest" %% "scalatest"           % "3.2.10"      % Test
     )
   )
 )
@@ -27,7 +27,7 @@ lazy val root = (project in file(".")).settings(
   name := "http4s-directives",
   libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, _)) =>
-      Seq(compilerPlugin("org.typelevel" % "kind-projector" % "0.13.0" cross CrossVersion.full))
+      Seq(compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full))
     case _            => Nil
   }),
   scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
