@@ -50,18 +50,25 @@ trait RequestOps[F[_]] {
   def headerOrElseF(key: CIString, orElse: F[Response[F]])(implicit M: Monad[F]): Directive[F, data.NonEmptyList[Header.Raw]] =
     header(key).flatMap(opt => Directive.getOrElseF(opt, orElse))
 
-  def expectMediaType(first: MediaType, rest: MediaType*)(implicit M: Monad[F]) = {
+  def expectMediaType(first: MediaType, rest: MediaType*)(
+      validate: (MediaType, MediaType) => Boolean = _.satisfiedBy(_)
+  )(implicit M: Monad[F]) = {
     val nel = first :: rest.toList
     for {
       ct <- headerOrElse[`Content-Type`](Response[F](Status.UnprocessableEntity))
-      if Directive.Filter(nel.contains(ct.mediaType), Directive.failure(Response[F](Status.UnsupportedMediaType)))
+      if Directive.Filter(nel.exists(m => validate(m, ct.mediaType)), Directive.failure(Response[F](Status.UnsupportedMediaType)))
     } yield ct.mediaType
   }
 
-  def expectMediaType(range: Set[MediaRange])(implicit M: Monad[F]) = {
+  def expectMediaRange(
+      range: Set[MediaRange]
+  )(validate: (MediaRange, MediaRange) => Boolean = _.satisfiedBy(_))(implicit M: Monad[F]) = {
     for {
       ct <- headerOrElse[`Content-Type`](Response[F](Status.UnprocessableEntity))
-      if Directive.Filter(range.contains(ct.mediaType), Directive.failure(Response[F](Status.UnsupportedMediaType)))
+      if Directive.Filter(
+        range.exists(m => validate(m, ct.mediaType)),
+        Directive.failure(Response[F](Status.UnsupportedMediaType))
+      )
     } yield ct.mediaType
   }
 
@@ -112,7 +119,7 @@ trait RequestOps[F[_]] {
 
   def asExpected[A](implicit dec: EntityDecoder[F, A], M: MonadError[F, Throwable]): Directive[F, A] = {
     for {
-      _      <- expectMediaType(dec.consumes)
+      _      <- expectMediaRange(dec.consumes)()
       result <- as[A]
     } yield result
   }

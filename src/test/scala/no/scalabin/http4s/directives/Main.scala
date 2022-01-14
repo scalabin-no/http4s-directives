@@ -31,7 +31,7 @@ object Main extends IOApp {
         }
       }.orNotFound
 
-    BlazeServerBuilder[IO](executionContext = ExecutionContext.global)
+    BlazeServerBuilder[IO]
       .bindHttp(8080, "localhost")
       .withHttpApp(service)
       .resource

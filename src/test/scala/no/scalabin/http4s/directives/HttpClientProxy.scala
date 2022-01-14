@@ -22,9 +22,9 @@ object HttpClientProxy extends IOApp {
       new Routes(client).httpRoutes.orNotFound
 
     val resources = for {
-      client <- BlazeClientBuilder[IO](executionContext = ExecutionContext.global).resource
+      client <- BlazeClientBuilder[IO].resource
       _      <-
-        BlazeServerBuilder[IO](executionContext = ExecutionContext.global).bindLocal(8080).withHttpApp(service(client)).resource
+        BlazeServerBuilder[IO].bindLocal(8080).withHttpApp(service(client)).resource
     } yield ()
 
     resources
