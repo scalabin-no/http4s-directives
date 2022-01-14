@@ -25,7 +25,7 @@ object SSEApp extends IOApp {
         }
       }.orNotFound
 
-    BlazeServerBuilder[IO](executionContext = ExecutionContext.global)
+    BlazeServerBuilder[IO]
       .bindLocal(8080)
       .withHttpApp(service)
       .resource
