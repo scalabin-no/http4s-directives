@@ -1,16 +1,13 @@
 package no.scalabin.http4s
 package directives
 
-import cats.Monad
 import cats.effect._
-import cats.implicits._
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.blaze.client._
 import org.http4s.blaze.server._
 import org.http4s.implicits._
 
-import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 object HttpClientProxy extends IOApp {
