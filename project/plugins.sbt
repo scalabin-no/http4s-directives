@@ -1,4 +1,4 @@
-addSbtPlugin("no.arktekk.sbt" % "aether-deploy-signed" % "0.27.0")
+addSbtPlugin("no.arktekk.sbt" % "aether-deploy-signed" % "0.29.1")
 
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.1.2")
 
